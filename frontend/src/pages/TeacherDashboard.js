@@ -56,10 +56,27 @@ const TeacherDashboard = ({ user, onLogout }) => {
     }
   };
 
-  const copyJoinCode = () => {
-    const joinLink = `${window.location.origin}?join=${user.join_code}`;
-    navigator.clipboard.writeText(joinLink);
-    toast.success('Join link copied to clipboard!');
+  const copyJoinCode = async () => {
+    try {
+      const joinLink = `${window.location.origin}?join=${user.join_code}`;
+      await navigator.clipboard.writeText(joinLink);
+      toast.success('Join link copied to clipboard!');
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = `${window.location.origin}?join=${user.join_code}`;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Join link copied to clipboard!');
+      } catch (err) {
+        toast.error('Unable to copy. Please copy manually: ' + user.join_code);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   return (
