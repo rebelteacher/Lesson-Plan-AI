@@ -39,6 +39,7 @@ const ViewLessonPlan = ({ user }) => {
   };
 
   const handleExport = async () => {
+    toast.info('Preparing your document...');
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${BACKEND_URL}/api/lesson-plans/${id}/export`, {
@@ -47,20 +48,41 @@ const ViewLessonPlan = ({ user }) => {
       
       if (response.ok) {
         const blob = await response.blob();
+        
+        // Check if blob has content
+        if (blob.size === 0) {
+          toast.error('Export file is empty. Please try again.');
+          return;
+        }
+        
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = url;
-        a.download = `lesson_plan_${id}.docx`;
+        a.download = `lesson_plan_${new Date().getTime()}.docx`;
         document.body.appendChild(a);
+        
+        // Trigger download
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        toast.success('Lesson plan exported!');
+        
+        // Show success message after a delay
+        setTimeout(() => {
+          toast.success('Document downloaded! Check your Downloads folder.');
+        }, 300);
+        
+        // Clean up after download starts
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 1000);
       } else {
+        const errorText = await response.text();
+        console.error('Export error:', errorText);
         toast.error('Failed to export lesson plan');
       }
     } catch (error) {
-      toast.error('Error exporting lesson plan');
+      console.error('Export error:', error);
+      toast.error('Error exporting lesson plan: ' + error.message);
     }
   };
 
