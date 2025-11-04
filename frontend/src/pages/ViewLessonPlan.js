@@ -190,20 +190,20 @@ const ViewLessonPlan = ({ user }) => {
             <Button 
               onClick={copyToClipboard} 
               data-testid="copy-lesson-plan-btn"
-              variant="outline" 
               className="flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
             >
               <Copy className="w-4 h-4" />
-              Copy
+              Copy to Clipboard
             </Button>
             <Button 
               onClick={handleExport} 
               data-testid="export-lesson-plan-btn"
+              variant="outline"
               className="flex items-center gap-2"
-              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
             >
               <FileDown className="w-4 h-4" />
-              Export to Word
+              Download Word
             </Button>
           </div>
         </div>
