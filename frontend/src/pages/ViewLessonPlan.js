@@ -55,26 +55,38 @@ const ViewLessonPlan = ({ user }) => {
           return;
         }
         
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `lesson_plan_${new Date().getTime()}.docx`;
-        document.body.appendChild(a);
+        console.log('Blob created:', blob.size, 'bytes');
         
-        // Trigger download
-        a.click();
-        
-        // Show success message after a delay
-        setTimeout(() => {
+        // Use different download method based on browser support
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+          // For IE/Edge
+          window.navigator.msSaveOrOpenBlob(blob, `lesson_plan_${new Date().getTime()}.docx`);
           toast.success('Document downloaded! Check your Downloads folder.');
-        }, 300);
-        
-        // Clean up after download starts
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 1000);
+        } else {
+          // For modern browsers
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `LessonPlan_${lessonPlan.textbook.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
+          
+          document.body.appendChild(a);
+          
+          // Force download with user gesture
+          setTimeout(() => {
+            a.click();
+            toast.success('Download started! Check your Downloads folder or browser download manager.');
+            console.log('Download triggered');
+          }, 100);
+          
+          // Clean up
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            if (document.body.contains(a)) {
+              document.body.removeChild(a);
+            }
+          }, 2000);
+        }
       } else {
         const errorText = await response.text();
         console.error('Export error:', errorText);
