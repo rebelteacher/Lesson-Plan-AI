@@ -62,33 +62,35 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route 
-            path="/" 
-            element={!user ? <AuthPage onLogin={handleLogin} /> : <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} />} 
-          />
-          <Route 
-            path="/dashboard" 
-            element={user && user.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
-          />
-          <Route 
-            path="/create" 
-            element={user && user.role === 'teacher' ? <CreateLessonPlan user={user} /> : <Navigate to="/" />} 
-          />
-          <Route 
-            path="/lesson/:id" 
-            element={user && user.role === 'teacher' ? <ViewLessonPlan user={user} /> : <Navigate to="/" />} 
-          />
-          <Route 
-            path="/admin" 
-            element={user && user.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
-          />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" />
-    </div>
+    <ErrorBoundary>
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route 
+              path="/" 
+              element={!user ? <AuthPage onLogin={handleLogin} /> : <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} />} 
+            />
+            <Route 
+              path="/dashboard" 
+              element={user && user.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/create" 
+              element={user && user.role === 'teacher' ? <CreateLessonPlan user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/lesson/:id" 
+              element={user && user.role === 'teacher' ? <ViewLessonPlan user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/admin" 
+              element={user && user.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
+            />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </div>
+    </ErrorBoundary>
   );
 }
 
