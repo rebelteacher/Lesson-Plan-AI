@@ -184,23 +184,15 @@ const ViewLessonPlan = ({ user }) => {
               <Copy className="w-4 h-4" />
               Copy
             </Button>
-            <a
-              href={`${BACKEND_URL}/api/lesson-plans/${id}/export`}
-              download={`lesson_plan_${id}.docx`}
-              onClick={(e) => {
-                e.preventDefault();
-                handleExport();
-              }}
+            <Button 
+              onClick={handleExport} 
+              data-testid="export-lesson-plan-btn"
+              className="flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
             >
-              <Button 
-                data-testid="export-lesson-plan-btn"
-                className="flex items-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
-              >
-                <FileDown className="w-4 h-4" />
-                Export to Word
-              </Button>
-            </a>
+              <FileDown className="w-4 h-4" />
+              Export to Word
+            </Button>
           </div>
         </div>
 
