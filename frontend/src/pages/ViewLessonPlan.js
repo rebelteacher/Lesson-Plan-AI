@@ -64,7 +64,7 @@ const ViewLessonPlan = ({ user }) => {
     }
   };
 
-  const copyToClipboard = () => {
+  const copyToClipboard = async () => {
     const sections = [
       { title: 'Learner Outcomes/Objectives', content: lessonPlan.learner_outcomes },
       { title: 'Standards', content: lessonPlan.standards },
@@ -84,8 +84,26 @@ const ViewLessonPlan = ({ user }) => {
     ];
 
     const text = sections.map(s => `${s.title}\n${s.content || 'N/A'}\n`).join('\n');
-    navigator.clipboard.writeText(text);
-    toast.success('Lesson plan copied to clipboard!');
+    
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Lesson plan copied to clipboard!');
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Lesson plan copied to clipboard!');
+      } catch (err) {
+        toast.error('Unable to copy to clipboard. Please copy manually.');
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   if (loading) {
