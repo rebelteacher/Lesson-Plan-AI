@@ -1,52 +1,92 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import '@/App.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthPage from '@/pages/AuthPage';
+import TeacherDashboard from '@/pages/TeacherDashboard';
+import AdminDashboard from '@/pages/AdminDashboard';
+import CreateLessonPlan from '@/pages/CreateLessonPlan';
+import ViewLessonPlan from '@/pages/ViewLessonPlan';
+import { Toaster } from '@/components/ui/sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const Home = () => {
-  const helloWorldApi = async () => {
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchUser(token);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUser = async (token) => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        localStorage.removeItem('token');
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+  const handleLogin = (token, userData) => {
+    localStorage.setItem('token', token);
+    setUser(userData);
+  };
 
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
-function App() {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-2xl font-light text-indigo-600">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route 
+            path="/" 
+            element={!user ? <AuthPage onLogin={handleLogin} /> : <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} />} 
+          />
+          <Route 
+            path="/dashboard" 
+            element={user && user.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/create" 
+            element={user && user.role === 'teacher' ? <CreateLessonPlan user={user} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/lesson/:id" 
+            element={user && user.role === 'teacher' ? <ViewLessonPlan user={user} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/admin" 
+            element={user && user.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
+          />
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-right" />
     </div>
   );
 }
