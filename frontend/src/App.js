@@ -7,6 +7,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import CreateLessonPlan from '@/pages/CreateLessonPlan';
 import ViewLessonPlan from '@/pages/ViewLessonPlan';
 import { Toaster } from '@/components/ui/sonner';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function App() {
   const [user, setUser] = useState(null);
