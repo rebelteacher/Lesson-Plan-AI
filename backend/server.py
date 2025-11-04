@@ -321,27 +321,97 @@ Make each section detailed and specific to day {idx+1}."""
             response = await chat.send_message(user_message)
             response_text = response if isinstance(response, str) else str(response)
             
-            # Create day plan with AI response (simple approach - store full response in teaching_lesson)
-            # In a real app, you'd parse each section
+            # Parse AI response into sections
+            sections = {
+                'learner_outcomes': '',
+                'standards': '',
+                'materials_needed': '',
+                'anticipatory_set': '',
+                'teaching_lesson': '',
+                'modeling': '',
+                'instructional_strategies': '',
+                'check_understanding': '',
+                'guided_practice': '',
+                'independent_practice': '',
+                'closure': '',
+                'summative_assessment': '',
+                'formative_assessment': '',
+                'extended_activities': '',
+                'review_reteach': '',
+                'early_finishers': ''
+            }
+            
+            # Simple section parsing
+            lines = response_text.split('\n')
+            current_section = None
+            current_text = []
+            
+            section_mapping = {
+                'learner outcomes': 'learner_outcomes',
+                'objectives': 'learner_outcomes',
+                'standards': 'standards',
+                'materials needed': 'materials_needed',
+                'anticipatory set': 'anticipatory_set',
+                'teaching the lesson': 'teaching_lesson',
+                'modeling': 'modeling',
+                'instructional strategies': 'instructional_strategies',
+                'check for understanding': 'check_understanding',
+                'guided practice': 'guided_practice',
+                'monitoring': 'guided_practice',
+                'independent practice': 'independent_practice',
+                'closure': 'closure',
+                'summative assessment': 'summative_assessment',
+                'formative assessment': 'formative_assessment',
+                'extended activities': 'extended_activities',
+                'review and reteach': 'review_reteach',
+                'reteach activities': 'review_reteach',
+                'early finishers': 'early_finishers'
+            }
+            
+            for line in lines:
+                line_lower = line.lower().strip()
+                found_section = False
+                
+                # Check if this line is a section header
+                for keyword, section_key in section_mapping.items():
+                    if keyword in line_lower and (line.startswith('#') or line.startswith('**') or line.endswith(':') or len(line) < 50):
+                        if current_section and current_text:
+                            sections[current_section] = '\n'.join(current_text).strip()
+                        current_section = section_key
+                        current_text = []
+                        found_section = True
+                        break
+                
+                if not found_section and current_section:
+                    current_text.append(line)
+            
+            # Save any remaining section
+            if current_section and current_text:
+                sections[current_section] = '\n'.join(current_text).strip()
+            
+            # If parsing failed, store everything in teaching_lesson
+            if not any(sections.values()):
+                sections['teaching_lesson'] = response_text
+            
             day_plan = DayPlan(
                 day_name=day_info['day_name'],
                 day_date=day_info['date'],
-                learner_outcomes=f"Generated content for {day_info['day_name']}",
-                standards="See full plan below",
-                materials_needed="See full plan below",
-                anticipatory_set="See full plan below",
-                teaching_lesson=response_text,  # Full AI response stored here
-                modeling="See full plan below",
-                instructional_strategies="See full plan below",
-                check_understanding="See full plan below",
-                guided_practice="See full plan below",
-                independent_practice="See full plan below",
-                closure="See full plan below",
-                summative_assessment="See full plan below",
-                formative_assessment="See full plan below",
-                extended_activities="See full plan below",
-                review_reteach="See full plan below",
-                early_finishers="See full plan below"
+                learner_outcomes=sections['learner_outcomes'] or 'Content will be generated',
+                standards=sections['standards'] or 'Content will be generated',
+                materials_needed=sections['materials_needed'] or 'Content will be generated',
+                anticipatory_set=sections['anticipatory_set'] or 'Content will be generated',
+                teaching_lesson=sections['teaching_lesson'] or response_text,
+                modeling=sections['modeling'] or 'Content will be generated',
+                instructional_strategies=sections['instructional_strategies'] or 'Content will be generated',
+                check_understanding=sections['check_understanding'] or 'Content will be generated',
+                guided_practice=sections['guided_practice'] or 'Content will be generated',
+                independent_practice=sections['independent_practice'] or 'Content will be generated',
+                closure=sections['closure'] or 'Content will be generated',
+                summative_assessment=sections['summative_assessment'] or 'Not applicable for today (next major assessment: ' + plan_data.next_major_assessment + ')',
+                formative_assessment=sections['formative_assessment'] or 'Content will be generated',
+                extended_activities=sections['extended_activities'] or 'Content will be generated',
+                review_reteach=sections['review_reteach'] or 'Content will be generated',
+                early_finishers=sections['early_finishers'] or 'Content will be generated'
             )
             daily_plans.append(day_plan)
         
