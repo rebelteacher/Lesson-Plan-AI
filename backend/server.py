@@ -249,6 +249,23 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     }
 
 
+# Helper function to calculate weekdays between dates
+def get_weekdays_between(start_date_str: str, end_date_str: str):
+    from datetime import datetime as dt
+    start = dt.strptime(start_date_str, "%Y-%m-%d")
+    end = dt.strptime(end_date_str, "%Y-%m-%d")
+    days = []
+    current = start
+    while current <= end:
+        # 0 = Monday, 6 = Sunday
+        if current.weekday() < 5:  # Monday to Friday
+            days.append({
+                'date': current.strftime("%Y-%m-%d"),
+                'day_name': current.strftime("%A")
+            })
+        current += timedelta(days=1)
+    return days
+
 # Lesson plan routes
 @api_router.post("/lesson-plans")
 async def create_lesson_plan(plan_data: LessonPlanCreate, current_user: dict = Depends(get_current_user)):
