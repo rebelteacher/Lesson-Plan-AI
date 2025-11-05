@@ -14,6 +14,15 @@ const AuthPage = ({ onLogin }) => {
   const [registerData, setRegisterData] = useState({ email: '', password: '', full_name: '', state: '', invitation_code: '' });
   const [loading, setLoading] = useState(false);
 
+  // Auto-fill invitation code from URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      setRegisterData(prev => ({ ...prev, invitation_code: code.toUpperCase() }));
+    }
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
