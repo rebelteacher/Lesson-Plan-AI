@@ -97,15 +97,26 @@ const AdminDashboard = ({ user, onLogout }) => {
             </h1>
             <p className="text-gray-600">Manage users and monitor system usage</p>
           </div>
-          <Button 
-            onClick={onLogout} 
-            data-testid="admin-logout-btn"
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => window.location.href = '/admin/invitation-codes'} 
+              data-testid="manage-codes-btn"
+              className="flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+            >
+              <Users className="w-4 h-4" />
+              Manage Invitation Codes
+            </Button>
+            <Button 
+              onClick={onLogout} 
+              data-testid="admin-logout-btn"
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-4 gap-6 mb-8">
