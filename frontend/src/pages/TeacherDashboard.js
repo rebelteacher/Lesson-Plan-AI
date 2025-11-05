@@ -100,39 +100,24 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Your Join Code</CardTitle>
-              <CardDescription>Share this link with others to invite them</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border-2 border-indigo-200">
-                  <div className="text-sm text-gray-600 mb-1">Your unique join code:</div>
-                  <div className="text-2xl font-bold text-indigo-600" data-testid="join-code-display">{user.join_code}</div>
-                </div>
-                <Button onClick={copyJoinCode} data-testid="copy-join-code-btn" className="flex items-center gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Copy Link
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="grid md:grid-cols-1 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Quick Stats</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Plans:</span>
-                  <span className="font-bold text-indigo-600" data-testid="total-plans-count">{lessonPlans.length}</span>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg">
+                  <div className="text-sm text-gray-600 mb-1">Total Plans</div>
+                  <div className="text-3xl font-bold text-indigo-600" data-testid="total-plans-count">{lessonPlans.length}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">State:</span>
-                  <span className="font-bold">{user.state || 'N/A'}</span>
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg">
+                  <div className="text-sm text-gray-600 mb-1">State</div>
+                  <div className="text-3xl font-bold text-blue-600">{user.state || 'N/A'}</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg">
+                  <div className="text-sm text-gray-600 mb-1">Account Status</div>
+                  <div className="text-lg font-bold text-green-600">Active</div>
                 </div>
               </div>
             </CardContent>
