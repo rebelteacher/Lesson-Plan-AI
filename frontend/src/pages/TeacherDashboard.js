@@ -133,44 +133,56 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </Alert>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="lesson-plans-grid">
-            {lessonPlans.map((plan) => (
-              <Card key={plan.id} className="hover:shadow-xl transition-shadow cursor-pointer" data-testid={`lesson-plan-card-${plan.id}`}>
-                <CardHeader>
-                  <CardTitle className="text-lg line-clamp-1">{plan.textbook}</CardTitle>
-                  <CardDescription>Lessons: {plan.lesson_range}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 mb-4">
-                    <div className="text-sm">
-                      <span className="text-gray-600">Date Range:</span>
-                      <div className="font-medium">{plan.start_date} - {plan.end_date}</div>
+            {lessonPlans.map((plan, index) => {
+              const colors = [
+                'from-rose-100 to-pink-100 border-rose-300',
+                'from-blue-100 to-cyan-100 border-blue-300',
+                'from-amber-100 to-yellow-100 border-amber-300',
+                'from-purple-100 to-indigo-100 border-purple-300',
+                'from-green-100 to-emerald-100 border-green-300',
+                'from-orange-100 to-red-100 border-orange-300'
+              ];
+              const colorClass = colors[index % colors.length];
+              
+              return (
+                <Card key={plan.id} className={`hover:shadow-2xl transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${colorClass} border-2`} data-testid={`lesson-plan-card-${plan.id}`}>
+                  <CardHeader>
+                    <CardTitle className="text-lg line-clamp-1 text-gray-800">{plan.textbook}</CardTitle>
+                    <CardDescription className="font-medium text-gray-700">Lessons: {plan.lesson_range}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 mb-4">
+                      <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-sm">
+                        <span className="text-gray-600 font-medium">Date Range:</span>
+                        <div className="font-semibold text-gray-800">{plan.start_date} - {plan.end_date}</div>
+                      </div>
+                      <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-sm">
+                        <span className="text-gray-600 font-medium">Next Assessment:</span>
+                        <div className="font-semibold text-gray-800">{plan.next_major_assessment}</div>
+                      </div>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-gray-600">Next Assessment:</span>
-                      <div className="font-medium">{plan.next_major_assessment}</div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => navigate(`/lesson/${plan.id}`)} 
+                        data-testid={`view-plan-btn-${plan.id}`}
+                        className="flex-1"
+                        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+                      >
+                        View Details
+                      </Button>
+                      <Button 
+                        onClick={() => handleDelete(plan.id)} 
+                        data-testid={`delete-plan-btn-${plan.id}`}
+                        variant="destructive"
+                        size="icon"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => navigate(`/lesson/${plan.id}`)} 
-                      data-testid={`view-plan-btn-${plan.id}`}
-                      className="flex-1"
-                      variant="outline"
-                    >
-                      View Details
-                    </Button>
-                    <Button 
-                      onClick={() => handleDelete(plan.id)} 
-                      data-testid={`delete-plan-btn-${plan.id}`}
-                      variant="destructive"
-                      size="icon"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
