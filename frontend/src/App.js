@@ -87,6 +87,10 @@ function App() {
               path="/admin" 
               element={user && user.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
             />
+            <Route 
+              path="/admin/invitation-codes" 
+              element={user && user.role === 'admin' ? <InvitationCodes user={user} /> : <Navigate to="/" />} 
+            />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />
