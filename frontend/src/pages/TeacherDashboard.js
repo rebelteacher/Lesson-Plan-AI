@@ -77,26 +77,32 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-1 gap-6 mb-8">
-          <Card>
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl">
             <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BookOpen className="w-6 h-6" />
+                Total Lesson Plans
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg">
-                  <div className="text-sm text-gray-600 mb-1">Total Plans</div>
-                  <div className="text-3xl font-bold text-indigo-600" data-testid="total-plans-count">{lessonPlans.length}</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg">
-                  <div className="text-sm text-gray-600 mb-1">State</div>
-                  <div className="text-3xl font-bold text-blue-600">{user.state || 'N/A'}</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg">
-                  <div className="text-sm text-gray-600 mb-1">Account Status</div>
-                  <div className="text-lg font-bold text-green-600">Active</div>
-                </div>
-              </div>
+              <div className="text-6xl font-bold mb-2" data-testid="total-plans-count">{lessonPlans.length}</div>
+              <div className="text-indigo-100">Plans created and saved</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Account Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold mb-2">Active</div>
+              <div className="text-emerald-100">Your account is in good standing</div>
             </CardContent>
           </Card>
         </div>
