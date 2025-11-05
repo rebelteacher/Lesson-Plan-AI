@@ -105,7 +105,16 @@ const AdminDashboard = ({ user, onLogout }) => {
               style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
             >
               <Users className="w-4 h-4" />
-              Manage Invitation Codes
+              Invitation Codes
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/admin/settings'} 
+              data-testid="admin-settings-btn"
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
             </Button>
             <Button 
               onClick={onLogout} 
