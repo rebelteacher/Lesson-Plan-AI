@@ -108,14 +108,14 @@ const TeacherDashboard = ({ user, onLogout }) => {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: '#4c1d95' }}>Your Lesson Plans</h2>
+          <h2 className="text-3xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: '#4c1d95' }}>Your Lesson Plans</h2>
           <Button 
             onClick={() => navigate('/create')} 
             data-testid="create-lesson-plan-btn"
-            className="flex items-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+            className="flex items-center gap-2 text-lg px-6 py-6 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)' }}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5" />
             Create New Plan
           </Button>
         </div>
