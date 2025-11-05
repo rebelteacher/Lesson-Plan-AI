@@ -609,6 +609,25 @@ async def deactivate_invitation_code(code: str, admin_user: dict = Depends(get_a
         raise HTTPException(status_code=404, detail="Invitation code not found")
     return {"message": "Invitation code deactivated successfully"}
 
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+
+@api_router.post("/auth/change-password")
+async def change_password(data: ChangePassword, current_user: dict = Depends(get_current_user)):
+    # Verify current password
+    if not verify_password(data.current_password, current_user['password']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Update password
+    new_hashed = hash_password(data.new_password)
+    await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": {"password": new_hashed}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
 # Admin routes
 @api_router.get("/admin/stats")
 async def get_admin_stats(admin_user: dict = Depends(get_admin_user)):
