@@ -133,6 +133,18 @@ const AuthPage = ({ onLogin }) => {
               <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="register-code">Invitation Code</Label>
+                    <Input
+                      id="register-code"
+                      data-testid="register-code-input"
+                      type="text"
+                      placeholder="Enter your invitation code"
+                      value={registerData.invitation_code}
+                      onChange={(e) => setRegisterData({ ...registerData, invitation_code: e.target.value.toUpperCase() })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="register-name">Full Name</Label>
                     <Input
                       id="register-name"
