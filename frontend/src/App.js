@@ -92,6 +92,10 @@ function App() {
               path="/admin/invitation-codes" 
               element={user && user.role === 'admin' ? <InvitationCodes user={user} /> : <Navigate to="/" />} 
             />
+            <Route 
+              path="/admin/settings" 
+              element={user && user.role === 'admin' ? <AdminSettings user={user} /> : <Navigate to="/" />} 
+            />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />
