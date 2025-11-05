@@ -182,7 +182,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>State</TableHead>
-                    <TableHead>Join Code</TableHead>
                     <TableHead>Plans</TableHead>
                     <TableHead>Last Login</TableHead>
                     <TableHead>Status</TableHead>
@@ -195,7 +194,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <TableCell className="font-medium">{u.full_name}</TableCell>
                       <TableCell>{u.email}</TableCell>
                       <TableCell>{u.state || 'N/A'}</TableCell>
-                      <TableCell className="font-mono text-sm">{u.join_code}</TableCell>
                       <TableCell>{u.lesson_plan_count}</TableCell>
                       <TableCell className="text-sm">
                         {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}
