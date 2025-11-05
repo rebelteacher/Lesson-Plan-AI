@@ -46,11 +46,26 @@ api_router = APIRouter(prefix="/api")
 
 
 # Models
+class InvitationCode(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    code: str
+    created_by: str  # admin user id
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    used_by: Optional[str] = None  # user id who used it
+    used_at: Optional[datetime] = None
+    is_active: bool = True
+
+class CreateInvitationCode(BaseModel):
+    count: int = 1  # number of codes to generate
+
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str
     state: Optional[str] = None
+    invitation_code: str  # Required invitation code
 
 class UserLogin(BaseModel):
     email: EmailStr
