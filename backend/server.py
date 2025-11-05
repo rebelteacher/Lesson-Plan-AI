@@ -202,25 +202,48 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
 # Auth routes
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
+    # Validate invitation code
+    invitation = await db.invitation_codes.find_one({
+        "code": user_data.invitation_code,
+        "is_active": True
+    })
+    
+    if not invitation:
+        raise HTTPException(status_code=400, detail="Invalid or inactive invitation code")
+    
+    if invitation.get('used_by'):
+        raise HTTPException(status_code=400, detail="This invitation code has already been used")
+    
     # Check if user exists
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create user
-    join_code = generate_join_code()
     user = User(
         email=user_data.email,
         full_name=user_data.full_name,
         state=user_data.state,
-        join_code=join_code
+        join_code=None  # No longer needed
     )
     
     user_dict = user.model_dump()
     user_dict['password'] = hash_password(user_data.password)
     user_dict['created_at'] = user_dict['created_at'].isoformat()
+    user_dict['invitation_code'] = user_data.invitation_code
     
     await db.users.insert_one(user_dict)
+    
+    # Mark invitation code as used
+    await db.invitation_codes.update_one(
+        {"code": user_data.invitation_code},
+        {
+            "$set": {
+                "used_by": user.id,
+                "used_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
     
     # Create token
     token = create_access_token({"sub": user.id, "email": user.email, "role": user.role})
@@ -232,7 +255,6 @@ async def register(user_data: UserRegister):
             "email": user.email,
             "full_name": user.full_name,
             "role": user.role,
-            "join_code": user.join_code,
             "state": user.state
         }
     }
