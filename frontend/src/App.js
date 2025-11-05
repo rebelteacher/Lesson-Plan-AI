@@ -6,6 +6,7 @@ import TeacherDashboard from '@/pages/TeacherDashboard';
 import AdminDashboard from '@/pages/AdminDashboard';
 import CreateLessonPlan from '@/pages/CreateLessonPlan';
 import ViewLessonPlan from '@/pages/ViewLessonPlan';
+import InvitationCodes from '@/pages/InvitationCodes';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
