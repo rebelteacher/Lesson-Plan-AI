@@ -11,7 +11,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AuthPage = ({ onLogin }) => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ email: '', password: '', full_name: '', state: '' });
+  const [registerData, setRegisterData] = useState({ email: '', password: '', full_name: '', state: '', invitation_code: '' });
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
