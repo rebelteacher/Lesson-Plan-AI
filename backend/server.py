@@ -564,6 +564,51 @@ async def export_lesson_plan(plan_id: str, current_user: dict = Depends(get_curr
     )
 
 
+# Admin routes - Invitation Codes
+@api_router.post("/admin/invitation-codes")
+async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
+    codes = []
+    for _ in range(data.count):
+        code = str(uuid.uuid4())[:8].upper()
+        invitation = InvitationCode(
+            code=code,
+            created_by=admin_user['id']
+        )
+        inv_dict = invitation.model_dump()
+        inv_dict['created_at'] = inv_dict['created_at'].isoformat()
+        await db.invitation_codes.insert_one(inv_dict)
+        codes.append(code)
+    
+    return {"codes": codes, "count": len(codes)}
+
+@api_router.get("/admin/invitation-codes")
+async def get_invitation_codes(admin_user: dict = Depends(get_admin_user)):
+    codes = await db.invitation_codes.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Get user info for used codes
+    for code in codes:
+        if code.get('used_by'):
+            user = await db.users.find_one({"id": code['used_by']}, {"_id": 0, "email": 1, "full_name": 1})
+            if user:
+                code['used_by_email'] = user.get('email')
+                code['used_by_name'] = user.get('full_name')
+    
+    return codes
+
+@api_router.delete("/admin/invitation-codes/{code}")
+async def delete_invitation_code(code: str, admin_user: dict = Depends(get_admin_user)):
+    result = await db.invitation_codes.delete_one({"code": code})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Invitation code not found")
+    return {"message": "Invitation code deleted successfully"}
+
+@api_router.post("/admin/invitation-codes/{code}/deactivate")
+async def deactivate_invitation_code(code: str, admin_user: dict = Depends(get_admin_user)):
+    result = await db.invitation_codes.update_one({"code": code}, {"$set": {"is_active": False}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Invitation code not found")
+    return {"message": "Invitation code deactivated successfully"}
+
 # Admin routes
 @api_router.get("/admin/stats")
 async def get_admin_stats(admin_user: dict = Depends(get_admin_user)):
