@@ -17,7 +17,8 @@ const CreateLessonPlan = ({ user }) => {
     start_date: '',
     end_date: '',
     lesson_range: '',
-    next_major_assessment: ''
+    next_major_assessment: '',
+    state_standards: ''
   });
 
   const handleSubmit = async (e) => {
