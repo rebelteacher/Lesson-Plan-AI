@@ -327,12 +327,14 @@ async def create_lesson_plan(plan_data: LessonPlanCreate, current_user: dict = D
             )
             chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
             
+            state_standards_text = f"\nState Standards to Align With: {plan_data.state_standards}" if plan_data.state_standards else ""
+            
             prompt = f"""Create a detailed lesson plan for {day_info['day_name']}, {day_info['date']} (Day {idx+1} of {len(weekdays)}) based on:
 
 Textbook: {plan_data.textbook}
 Lesson Range: {plan_data.lesson_range}
 Overall Date Range: {plan_data.start_date} to {plan_data.end_date}
-Next Major Assessment: {plan_data.next_major_assessment}
+Next Major Assessment: {plan_data.next_major_assessment}{state_standards_text}
 
 Provide specific, actionable content for THIS DAY ONLY for each section:
 
