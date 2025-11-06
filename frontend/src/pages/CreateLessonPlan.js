@@ -143,6 +143,18 @@ const CreateLessonPlan = ({ user }) => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="state_standards">State Standards (Optional)</Label>
+                  <Input
+                    id="state_standards"
+                    data-testid="state-standards-input"
+                    placeholder="e.g., CCSS.ELA-LITERACY.RI.8.2, CA NGSS 5-PS1-1, etc."
+                    value={formData.state_standards}
+                    onChange={(e) => setFormData({ ...formData, state_standards: e.target.value })}
+                  />
+                  <p className="text-sm text-gray-500">Enter the state standards you want to align with (e.g., Common Core, state-specific standards)</p>
+                </div>
+
                 <Button 
                   type="submit" 
                   data-testid="generate-plan-btn"
