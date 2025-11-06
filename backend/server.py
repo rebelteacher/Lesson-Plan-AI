@@ -339,7 +339,7 @@ Next Major Assessment: {plan_data.next_major_assessment}{state_standards_text}
 Provide specific, actionable content for THIS DAY ONLY for each section:
 
 1. Learner Outcomes/Objectives
-2. Standards
+2. Standards (include the relevant state standards provided above, formatted clearly)
 3. Materials Needed
 4. Anticipatory Set
 5. Teaching the Lesson
