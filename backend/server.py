@@ -90,6 +90,7 @@ class LessonPlanCreate(BaseModel):
     end_date: str
     lesson_range: str
     next_major_assessment: str
+    state_standards: Optional[str] = None
 
 class DayPlan(BaseModel):
     day_name: str  # e.g., "Monday", "Tuesday"
