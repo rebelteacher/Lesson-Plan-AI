@@ -8,11 +8,6 @@ import CreateLessonPlan from '@/pages/CreateLessonPlan';
 import ViewLessonPlan from '@/pages/ViewLessonPlan';
 import InvitationCodes from '@/pages/InvitationCodes';
 import AdminSettings from '@/pages/AdminSettings';
-import ClassManagement from '@/pages/ClassManagement';
-import CreateQuiz from '@/pages/CreateQuiz';
-import QuizAnalytics from '@/pages/QuizAnalytics';
-import StudentJoin from '@/pages/StudentJoin';
-import TakeQuiz from '@/pages/TakeQuiz';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
