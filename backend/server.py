@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
+import json
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
