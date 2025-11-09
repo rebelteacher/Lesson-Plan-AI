@@ -74,10 +74,11 @@ const TakeQuiz = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           test_id: quizId,
-          student_id: studentId,
+          student_id: student.id,
           class_id: 'temp', // Will be handled by backend
           answers: formattedAnswers
-        })
+        }),
+        credentials: 'include'
       });
 
       if (response.ok) {
