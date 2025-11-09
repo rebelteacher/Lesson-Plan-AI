@@ -593,31 +593,117 @@ async def get_classes(current_user: dict = Depends(get_current_user)):
     
     return classes
 
+# Student Auth Routes
+@api_router.post("/auth/student/session")
+async def process_student_session(request: Request):
+    session_id = request.headers.get('X-Session-ID')
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID required")
+    
+    # Call Emergent auth service
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            'https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data',
+            headers={'X-Session-ID': session_id}
+        ) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=401, detail="Invalid session")
+            user_data = await resp.json()
+    
+    # Create or get student
+    existing_student = await db.students.find_one({"email": user_data['email']}, {"_id": 0})
+    if existing_student:
+        student = existing_student
+    else:
+        student = Student(
+            name=user_data['name'],
+            email=user_data['email'],
+            picture=user_data.get('picture')
+        )
+        student_dict = student.model_dump()
+        student_dict['created_at'] = student_dict['created_at'].isoformat()
+        await db.students.insert_one(student_dict)
+    
+    # Create session
+    session_token = user_data['session_token']
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    student_session = StudentSession(
+        student_id=student['id'],
+        session_token=session_token,
+        expires_at=expires_at
+    )
+    session_dict = student_session.model_dump()
+    session_dict['expires_at'] = session_dict['expires_at'].isoformat()
+    session_dict['created_at'] = session_dict['created_at'].isoformat()
+    await db.student_sessions.insert_one(session_dict)
+    
+    return {
+        "student": student,
+        "session_token": session_token
+    }
+
+async def get_current_student(request: Request):
+    # Check cookie first
+    session_token = request.cookies.get('student_session_token')
+    
+    # Fallback to Authorization header
+    if not session_token:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            session_token = auth_header.split(' ')[1]
+    
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Get session
+    session = await db.student_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(session['expires_at']) if isinstance(session['expires_at'], str) else session['expires_at']
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
+    
+    # Get student
+    student = await db.students.find_one({"id": session['student_id']}, {"_id": 0})
+    if not student:
+        raise HTTPException(status_code=401, detail="Student not found")
+    
+    return student
+
+@api_router.get("/auth/student/me")
+async def get_student_me(request: Request):
+    student = await get_current_student(request)
+    return student
+
+@api_router.post("/auth/student/logout")
+async def student_logout(request: Request):
+    session_token = request.cookies.get('student_session_token')
+    if session_token:
+        await db.student_sessions.delete_one({"session_token": session_token})
+    return {"message": "Logged out"}
+
 @api_router.post("/classes/join")
-async def join_class(data: dict):
-    # For student joining with class code
+async def join_class(data: dict, request: Request):
+    # Get authenticated student
+    student = await get_current_student(request)
+    
     class_code = data.get('class_code')
-    student_name = data.get('student_name')
-    student_email = data.get('student_email')
     student_id_number = data.get('student_id')
     
     class_data = await db.classes.find_one({"class_code": class_code}, {"_id": 0})
     if not class_data:
         raise HTTPException(status_code=404, detail="Class code not found")
     
-    # Create or get student
-    existing_student = await db.students.find_one({"email": student_email}, {"_id": 0})
-    if existing_student:
-        student = existing_student
-    else:
-        student = Student(
-            name=student_name,
-            email=student_email,
-            student_id=student_id_number
+    # Update student with student_id if provided
+    if student_id_number:
+        await db.students.update_one(
+            {"id": student['id']},
+            {"$set": {"student_id": student_id_number}}
         )
-        student_dict = student.model_dump()
-        student_dict['created_at'] = student_dict['created_at'].isoformat()
-        await db.students.insert_one(student_dict)
     
     # Add student to class if not already there
     if student['id'] not in class_data['student_ids']:
