@@ -11,16 +11,28 @@ const StudentAssignments = () => {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const studentId = sessionStorage.getItem('student_id');
-  const studentName = sessionStorage.getItem('student_name');
+  const [student, setStudent] = useState(null);
 
   useEffect(() => {
-    if (!studentId) {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/student/me`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudent(data);
+        fetchAssignments(data.id);
+      } else {
+        navigate('/student/join');
+      }
+    } catch (error) {
       navigate('/student/join');
-      return;
     }
-    fetchAssignments();
-  }, [studentId]);
+  };
 
   const fetchAssignments = async () => {
     try {
