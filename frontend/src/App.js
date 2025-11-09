@@ -102,6 +102,30 @@ function App() {
               path="/admin/settings" 
               element={user && user.role === 'admin' ? <AdminSettings user={user} /> : <Navigate to="/" />} 
             />
+            <Route 
+              path="/classes" 
+              element={user && user.role === 'teacher' ? <ClassManagement user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/quiz/create/:lessonPlanId" 
+              element={user && user.role === 'teacher' ? <CreateQuiz user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/quiz/analytics" 
+              element={user && user.role === 'teacher' ? <QuizAnalytics user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/student/join" 
+              element={<StudentJoin />} 
+            />
+            <Route 
+              path="/student/assignments" 
+              element={<StudentAssignments />} 
+            />
+            <Route 
+              path="/student/quiz/:quizId" 
+              element={<TakeQuiz />} 
+            />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />
