@@ -15,15 +15,28 @@ const TakeQuiz = () => {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const studentId = sessionStorage.getItem('student_id');
+  const [student, setStudent] = useState(null);
 
   useEffect(() => {
-    if (!studentId) {
-      navigate('/student/join');
-      return;
-    }
-    fetchQuiz();
+    checkAuthAndFetch();
   }, [quizId]);
+
+  const checkAuthAndFetch = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/student/me`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudent(data);
+        fetchQuiz();
+      } else {
+        navigate('/student/join');
+      }
+    } catch (error) {
+      navigate('/student/join');
+    }
+  };
 
   const fetchQuiz = async () => {
     try {
