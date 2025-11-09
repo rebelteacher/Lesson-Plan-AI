@@ -567,6 +567,428 @@ async def export_lesson_plan(plan_id: str, current_user: dict = Depends(get_curr
     )
 
 
+# Class Management Routes
+@api_router.post("/classes")
+async def create_class(class_data: dict, current_user: dict = Depends(get_current_user)):
+    new_class = Class(
+        teacher_id=current_user['id'],
+        name=class_data['name'],
+        description=class_data.get('description')
+    )
+    class_dict = new_class.model_dump()
+    class_dict['created_at'] = class_dict['created_at'].isoformat()
+    await db.classes.insert_one(class_dict)
+    return new_class
+
+@api_router.get("/classes")
+async def get_classes(current_user: dict = Depends(get_current_user)):
+    classes = await db.classes.find({"teacher_id": current_user['id']}, {"_id": 0}).to_list(1000)
+    
+    # Get student counts
+    for cls in classes:
+        students = await db.students.find({"id": {"$in": cls['student_ids']}}, {"_id": 0, "name": 1, "email": 1}).to_list(1000)
+        cls['students'] = students
+        cls['student_count'] = len(students)
+    
+    return classes
+
+@api_router.post("/classes/join")
+async def join_class(data: dict):
+    # For student joining with class code
+    class_code = data.get('class_code')
+    student_name = data.get('student_name')
+    student_email = data.get('student_email')
+    student_id_number = data.get('student_id')
+    
+    class_data = await db.classes.find_one({"class_code": class_code}, {"_id": 0})
+    if not class_data:
+        raise HTTPException(status_code=404, detail="Class code not found")
+    
+    # Create or get student
+    existing_student = await db.students.find_one({"email": student_email}, {"_id": 0})
+    if existing_student:
+        student = existing_student
+    else:
+        student = Student(
+            name=student_name,
+            email=student_email,
+            student_id=student_id_number
+        )
+        student_dict = student.model_dump()
+        student_dict['created_at'] = student_dict['created_at'].isoformat()
+        await db.students.insert_one(student_dict)
+    
+    # Add student to class if not already there
+    if student['id'] not in class_data['student_ids']:
+        await db.classes.update_one(
+            {"class_code": class_code},
+            {"$push": {"student_ids": student['id']}}
+        )
+    
+    return {"message": "Joined class successfully", "class_name": class_data['name'], "student_id": student['id']}
+
+@api_router.delete("/classes/{class_id}")
+async def delete_class(class_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.classes.delete_one({"id": class_id, "teacher_id": current_user['id']})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Class not found")
+    return {"message": "Class deleted successfully"}
+
+# Quiz/Test Routes
+@api_router.post("/quizzes/extract-objectives")
+async def extract_objectives(data: dict, current_user: dict = Depends(get_current_user)):
+    lesson_plan_id = data.get('lesson_plan_id')
+    
+    # Get lesson plan
+    plan = await db.lesson_plans.find_one({"id": lesson_plan_id, "user_id": current_user['id']}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Lesson plan not found")
+    
+    # Extract all learner outcomes from daily plans
+    objectives = []
+    for day_plan in plan.get('daily_plans', []):
+        if day_plan.get('learner_outcomes'):
+            # Parse objectives (split by line, bullet points, or numbers)
+            text = day_plan['learner_outcomes']
+            # Simple parsing - split by newlines and clean up
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            for line in lines:
+                # Remove bullets, numbers, dashes
+                clean_line = line.lstrip('•-*123456789.() ').strip()
+                if len(clean_line) > 10:  # Only keep meaningful objectives
+                    objectives.append({
+                        'id': str(uuid.uuid4()),
+                        'text': clean_line,
+                        'day': day_plan['day_name'],
+                        'date': day_plan['day_date'],
+                        'selected': True  # Default to selected
+                    })
+    
+    return {"objectives": objectives}
+
+@api_router.post("/quizzes/generate-questions")
+async def generate_questions(data: dict, current_user: dict = Depends(get_current_user)):
+    objectives = data.get('objectives', [])  # List of objective texts
+    count = data.get('count', 5)  # Number of questions per objective
+    
+    if not objectives:
+        raise HTTPException(status_code=400, detail="No objectives provided")
+    
+    # Initialize Claude
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"quiz_gen_{current_user['id']}_{datetime.now(timezone.utc).isoformat()}",
+        system_message="You are an expert education assessment creator. Generate high-quality multiple choice questions."
+    )
+    chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
+    
+    all_questions = []
+    
+    for obj in objectives:
+        prompt = f"""Generate {count} multiple choice questions to assess the following learning objective:
+
+"{obj}"
+
+For each question:
+1. Make it grade-appropriate and clear
+2. Provide exactly 4 answer options
+3. Indicate which option (0-3) is correct
+4. Ensure distractors are plausible but clearly wrong
+
+Return ONLY a JSON array in this exact format:
+[
+  {{
+    "question_text": "question here",
+    "options": ["option 1", "option 2", "option 3", "option 4"],
+    "correct_answer": 0,
+    "skill": "{obj}"
+  }}
+]
+
+Return ONLY the JSON array, no other text."""
+
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        response_text = response if isinstance(response, str) else str(response)
+        
+        # Parse JSON response
+        try:
+            # Clean response
+            json_start = response_text.find('[')
+            json_end = response_text.rfind(']') + 1
+            if json_start != -1 and json_end > json_start:
+                json_text = response_text[json_start:json_end]
+                questions = json.loads(json_text)
+                
+                for q in questions:
+                    all_questions.append({
+                        'id': str(uuid.uuid4()),
+                        'question_text': q['question_text'],
+                        'options': q['options'],
+                        'correct_answer': q['correct_answer'],
+                        'skill': obj
+                    })
+        except Exception as e:
+            logging.error(f"Error parsing questions: {str(e)}")
+            continue
+    
+    return {"questions": all_questions}
+
+@api_router.post("/quizzes")
+async def create_quiz(data: dict, current_user: dict = Depends(get_current_user)):
+    quiz = QuizTest(
+        title=data['title'],
+        teacher_id=current_user['id'],
+        lesson_plan_id=data['lesson_plan_id'],
+        questions=[Question(**q) for q in data['questions']],
+        status=data.get('status', 'draft')
+    )
+    
+    quiz_dict = quiz.model_dump()
+    quiz_dict['created_at'] = quiz_dict['created_at'].isoformat()
+    await db.quizzes.insert_one(quiz_dict)
+    
+    return quiz
+
+@api_router.get("/quizzes")
+async def get_quizzes(current_user: dict = Depends(get_current_user)):
+    quizzes = await db.quizzes.find({"teacher_id": current_user['id']}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return quizzes
+
+@api_router.get("/quizzes/{quiz_id}")
+async def get_quiz(quiz_id: str):
+    quiz = await db.quizzes.find_one({"id": quiz_id}, {"_id": 0})
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return quiz
+
+@api_router.put("/quizzes/{quiz_id}")
+async def update_quiz(quiz_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    result = await db.quizzes.update_one(
+        {"id": quiz_id, "teacher_id": current_user['id']},
+        {"$set": data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return {"message": "Quiz updated successfully"}
+
+@api_router.delete("/quizzes/{quiz_id}")
+async def delete_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.quizzes.delete_one({"id": quiz_id, "teacher_id": current_user['id']})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return {"message": "Quiz deleted successfully"}
+
+# Assignment Routes
+@api_router.post("/assignments")
+async def create_assignment(data: dict, current_user: dict = Depends(get_current_user)):
+    assignment = Assignment(
+        test_id=data['test_id'],
+        class_ids=data['class_ids']
+    )
+    
+    assign_dict = assignment.model_dump()
+    assign_dict['created_at'] = assign_dict['created_at'].isoformat()
+    await db.assignments.insert_one(assign_dict)
+    
+    # Update quiz status to published
+    await db.quizzes.update_one(
+        {"id": data['test_id']},
+        {"$set": {"status": "published"}}
+    )
+    
+    return assignment
+
+@api_router.get("/assignments/student/{student_id}")
+async def get_student_assignments(student_id: str):
+    # Get classes the student is in
+    classes = await db.classes.find({"student_ids": student_id}, {"_id": 0, "id": 1}).to_list(1000)
+    class_ids = [c['id'] for c in classes]
+    
+    # Get assignments for these classes
+    assignments = await db.assignments.find({"class_ids": {"$in": class_ids}}, {"_id": 0}).to_list(1000)
+    
+    # Get quiz details and check if completed
+    result = []
+    for assign in assignments:
+        quiz = await db.quizzes.find_one({"id": assign['test_id']}, {"_id": 0})
+        if quiz:
+            submission = await db.submissions.find_one({"test_id": quiz['id'], "student_id": student_id}, {"_id": 0})
+            result.append({
+                **assign,
+                'quiz': quiz,
+                'completed': submission is not None,
+                'score': submission['score'] if submission else None
+            })
+    
+    return result
+
+# Submission Routes
+@api_router.post("/submissions")
+async def submit_quiz(data: dict):
+    test_id = data['test_id']
+    student_id = data['student_id']
+    answers = [StudentAnswer(**a) for a in data['answers']]
+    class_id = data['class_id']
+    
+    # Get quiz
+    quiz = await db.quizzes.find_one({"id": test_id}, {"_id": 0})
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    
+    # Calculate score and skills breakdown
+    correct = 0
+    total = len(quiz['questions'])
+    skills_breakdown = {}
+    
+    for answer in answers:
+        question = next((q for q in quiz['questions'] if q['id'] == answer.question_id), None)
+        if question:
+            skill = question['skill']
+            if skill not in skills_breakdown:
+                skills_breakdown[skill] = {'correct': 0, 'total': 0, 'percentage': 0}
+            
+            skills_breakdown[skill]['total'] += 1
+            
+            if question['correct_answer'] == answer.selected_answer:
+                correct += 1
+                skills_breakdown[skill]['correct'] += 1
+    
+    # Calculate percentages
+    for skill in skills_breakdown:
+        skills_breakdown[skill]['percentage'] = (skills_breakdown[skill]['correct'] / skills_breakdown[skill]['total']) * 100
+    
+    score = (correct / total) * 100 if total > 0 else 0
+    
+    submission = Submission(
+        test_id=test_id,
+        student_id=student_id,
+        class_id=class_id,
+        answers=answers,
+        score=score,
+        skills_breakdown=skills_breakdown
+    )
+    
+    sub_dict = submission.model_dump()
+    sub_dict['submitted_at'] = sub_dict['submitted_at'].isoformat()
+    await db.submissions.insert_one(sub_dict)
+    
+    return submission
+
+# Analytics Routes
+@api_router.get("/analytics/class/{class_id}")
+async def get_class_analytics(class_id: str, current_user: dict = Depends(get_current_user)):
+    # Get all submissions for this class
+    submissions = await db.submissions.find({"class_id": class_id}, {"_id": 0}).to_list(10000)
+    
+    if not submissions:
+        return {"message": "No data yet"}
+    
+    # Get students
+    class_data = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    students = await db.students.find({"id": {"$in": class_data['student_ids']}}, {"_id": 0}).to_list(1000)
+    
+    # Calculate analytics
+    skill_stats = {}
+    student_stats = {}
+    
+    for sub in submissions:
+        # Track student performance
+        if sub['student_id'] not in student_stats:
+            student = next((s for s in students if s['id'] == sub['student_id']), None)
+            student_stats[sub['student_id']] = {
+                'student_name': student['name'] if student else 'Unknown',
+                'total_score': 0,
+                'count': 0,
+                'skills': {}
+            }
+        
+        student_stats[sub['student_id']]['total_score'] += sub['score']
+        student_stats[sub['student_id']]['count'] += 1
+        
+        # Track skill performance
+        for skill, breakdown in sub['skills_breakdown'].items():
+            if skill not in skill_stats:
+                skill_stats[skill] = {
+                    'skill': skill,
+                    'total_attempts': 0,
+                    'correct_count': 0,
+                    'total_questions': 0,
+                    'students_struggling': []
+                }
+            
+            skill_stats[skill]['total_attempts'] += 1
+            skill_stats[skill]['correct_count'] += breakdown['correct']
+            skill_stats[skill]['total_questions'] += breakdown['total']
+            
+            # Track student performance on this skill
+            if sub['student_id'] not in student_stats[sub['student_id']]['skills']:
+                student_stats[sub['student_id']]['skills'][skill] = {'correct': 0, 'total': 0}
+            
+            student_stats[sub['student_id']]['skills'][skill]['correct'] += breakdown['correct']
+            student_stats[sub['student_id']]['skills'][skill]['total'] += breakdown['total']
+    
+    # Calculate averages and identify struggling students
+    for skill, stats in skill_stats.items():
+        stats['class_average'] = (stats['correct_count'] / stats['total_questions']) * 100 if stats['total_questions'] > 0 else 0
+        
+        # Find students struggling with this skill (below 70%)
+        for student_id, student_data in student_stats.items():
+            if skill in student_data['skills']:
+                skill_perf = student_data['skills'][skill]
+                percentage = (skill_perf['correct'] / skill_perf['total']) * 100
+                if percentage < 70:
+                    stats['students_struggling'].append({
+                        'student_id': student_id,
+                        'student_name': student_data['student_name'],
+                        'percentage': percentage
+                    })
+    
+    # Calculate overall student averages
+    for student_id, stats in student_stats.items():
+        stats['overall_average'] = stats['total_score'] / stats['count'] if stats['count'] > 0 else 0
+    
+    return {
+        'skill_stats': list(skill_stats.values()),
+        'student_stats': list(student_stats.values())
+    }
+
+@api_router.post("/analytics/remediation-suggestions")
+async def get_remediation_suggestions(data: dict, current_user: dict = Depends(get_current_user)):
+    skill = data.get('skill')
+    student_names = data.get('student_names', [])
+    
+    # Generate AI suggestions
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"remediation_{current_user['id']}_{datetime.now(timezone.utc).isoformat()}",
+        system_message="You are an expert education interventionist providing targeted remediation strategies."
+    )
+    chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
+    
+    prompt = f"""Provide exactly 5 specific, actionable remediation activities for students struggling with the following skill:
+
+"{skill}"
+
+Students needing help: {', '.join(student_names)}
+
+For each activity:
+1. Be specific and immediately actionable
+2. Include materials needed
+3. Suggest duration (5-15 minutes)
+4. Make it engaging and varied
+5. Build from concrete to abstract
+
+Format as a numbered list (1-5)."""
+
+    user_message = UserMessage(text=prompt)
+    response = await chat.send_message(user_message)
+    response_text = response if isinstance(response, str) else str(response)
+    
+    return {"skill": skill, "suggestions": response_text}
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
