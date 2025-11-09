@@ -34,9 +34,11 @@ const StudentAssignments = () => {
     }
   };
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = async (studentId) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/assignments/student/${studentId}`);
+      const response = await fetch(`${BACKEND_URL}/api/assignments/student/${studentId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const data = await response.json();
         setAssignments(data);
