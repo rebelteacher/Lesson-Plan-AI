@@ -82,6 +82,13 @@ const AuthPage = ({ onLogin }) => {
           </div>
           <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#4c1d95' }}>LessonPlan AI</h1>
           <p className="text-gray-600">AI-powered lesson planning for educators</p>
+          <Button 
+            onClick={() => window.location.href = '/student/join'}
+            variant="outline"
+            className="mt-4"
+          >
+            Student? Join a Class
+          </Button>
         </div>
 
         <Card className="shadow-2xl border-0">
