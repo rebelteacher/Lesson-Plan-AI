@@ -12,13 +12,68 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const StudentJoin = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    class_code: searchParams.get('code') || '',
-    student_name: '',
-    student_email: '',
-    student_id: ''
-  });
-  const [loading, setLoading] = useState(false);
+  const [student, setStudent] = useState(null);
+  const [classCode, setClassCode] = useState(searchParams.get('code') || '');
+  const [studentIdNumber, setStudentIdNumber] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    // Check if session_id in URL fragment
+    const fragment = window.location.hash;
+    if (fragment.includes('session_id=')) {
+      const sessionId = fragment.split('session_id=')[1].split('&')[0];
+      await processSession(sessionId);
+      window.location.hash = ''; // Clean URL
+      return;
+    }
+
+    // Check existing session
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/student/me`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudent(data);
+      }
+    } catch (error) {
+      console.log('Not authenticated');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processSession = async (sessionId) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/student/session`, {
+        method: 'POST',
+        headers: { 'X-Session-ID': sessionId },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Set cookie
+        document.cookie = `student_session_token=${data.session_token}; path=/; max-age=${7*24*60*60}; secure; samesite=none`;
+        setStudent(data.student);
+        toast.success(`Welcome, ${data.student.name}!`);
+      }
+    } catch (error) {
+      toast.error('Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    const redirectUrl = encodeURIComponent(window.location.href);
+    window.location.href = `https://auth.emergentagent.com/?redirect=${redirectUrl}`;
+  };
 
   const handleJoinClass = async (e) => {
     e.preventDefault();
