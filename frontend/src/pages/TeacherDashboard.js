@@ -176,22 +176,32 @@ const TeacherDashboard = ({ user, onLogout }) => {
                         <div className="font-semibold text-gray-800">{plan.next_major_assessment}</div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => navigate(`/lesson/${plan.id}`)} 
+                          data-testid={`view-plan-btn-${plan.id}`}
+                          className="flex-1"
+                          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+                        >
+                          View Details
+                        </Button>
+                        <Button 
+                          onClick={() => handleDelete(plan.id)} 
+                          data-testid={`delete-plan-btn-${plan.id}`}
+                          variant="destructive"
+                          size="icon"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                       <Button 
-                        onClick={() => navigate(`/lesson/${plan.id}`)} 
-                        data-testid={`view-plan-btn-${plan.id}`}
-                        className="flex-1"
-                        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+                        onClick={() => navigate(`/quiz/create/${plan.id}`)} 
+                        className="w-full"
+                        variant="outline"
+                        style={{ borderColor: '#10b981', color: '#10b981' }}
                       >
-                        View Details
-                      </Button>
-                      <Button 
-                        onClick={() => handleDelete(plan.id)} 
-                        data-testid={`delete-plan-btn-${plan.id}`}
-                        variant="destructive"
-                        size="icon"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                        📝 Create Quiz
                       </Button>
                     </div>
                   </CardContent>
