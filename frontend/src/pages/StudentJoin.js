@@ -77,21 +77,27 @@ const StudentJoin = () => {
 
   const handleJoinClass = async (e) => {
     e.preventDefault();
-    setLoading(true);
     
+    if (!student) {
+      toast.error('Please login with Google first');
+      return;
+    }
+
+    setJoining(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/classes/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          class_code: classCode,
+          student_id: studentIdNumber
+        }),
+        credentials: 'include'
       });
       
       if (response.ok) {
         const data = await response.json();
         toast.success(`Joined ${data.class_name} successfully!`);
-        // Store student ID in session
-        sessionStorage.setItem('student_id', data.student_id);
-        sessionStorage.setItem('student_name', formData.student_name);
         navigate('/student/assignments');
       } else {
         const error = await response.json();
@@ -100,9 +106,17 @@ const StudentJoin = () => {
     } catch (error) {
       toast.error('Error joining class');
     } finally {
-      setLoading(false);
+      setJoining(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%)' }}>
+        <div className="text-2xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%)' }}>
