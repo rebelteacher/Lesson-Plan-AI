@@ -59,7 +59,7 @@ const StudentAssignments = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#4c1d95' }}>
-            Welcome, {studentName}!
+            Welcome, {student?.name}!
           </h1>
           <p className="text-gray-600">Your quiz assignments</p>
         </div>
