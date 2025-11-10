@@ -264,7 +264,7 @@ const CreateQuiz = ({ user }) => {
             <div className="flex items-center gap-4">
               <div className={`flex items-center gap-2 ${step >= 1 ? 'text-indigo-600' : 'text-gray-400'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-300'}`}>1</div>
-                <span className="font-medium">Select Objectives</span>
+                <span className="font-medium">Select Standards</span>
               </div>
               <div className="w-12 h-1 bg-gray-300"></div>
               <div className={`flex items-center gap-2 ${step >= 2 ? 'text-indigo-600' : 'text-gray-400'}`}>
