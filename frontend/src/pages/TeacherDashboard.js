@@ -218,6 +218,18 @@ const TeacherDashboard = ({ user, onLogout }) => {
                         <div className="font-semibold text-gray-800">{plan.next_major_assessment}</div>
                       </div>
                     </div>
+                    {plan.admin_feedback && plan.submission_status === 'rejected' && (
+                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                        <div className="font-medium text-red-700 mb-1">Admin Feedback:</div>
+                        <div className="text-red-600">{plan.admin_feedback}</div>
+                      </div>
+                    )}
+                    {plan.admin_feedback && plan.submission_status === 'approved' && (
+                      <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded text-sm">
+                        <div className="font-medium text-green-700 mb-1">Admin Feedback:</div>
+                        <div className="text-green-600">{plan.admin_feedback}</div>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <Button 
@@ -245,6 +257,16 @@ const TeacherDashboard = ({ user, onLogout }) => {
                       >
                         📝 Create Quiz
                       </Button>
+                      {(!plan.submission_status || plan.submission_status === 'draft' || plan.submission_status === 'rejected') && (
+                        <Button 
+                          onClick={() => handleSubmitToAdmin(plan.id)} 
+                          className="w-full"
+                          variant="outline"
+                          style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                        >
+                          📤 Submit to Admin
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
