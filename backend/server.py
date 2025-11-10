@@ -731,9 +731,12 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
     
-    # Extract all learner outcomes from daily plans
+    # Extract all learner outcomes and standards from daily plans
     objectives = []
     for day_plan in plan.get('daily_plans', []):
+        # Get standards for this day
+        standards = day_plan.get('standards', '')
+        
         if day_plan.get('learner_outcomes'):
             # Parse objectives (split by line, bullet points, or numbers)
             text = day_plan['learner_outcomes']
@@ -748,6 +751,7 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
                         'text': clean_line,
                         'day': day_plan['day_name'],
                         'date': day_plan['day_date'],
+                        'standards': standards,  # Add standards from lesson plan
                         'selected': True  # Default to selected
                     })
     
