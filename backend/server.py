@@ -784,11 +784,16 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
 
 @api_router.post("/quizzes/generate-questions")
 async def generate_questions(data: dict, current_user: dict = Depends(get_current_user)):
-    objectives_data = data.get('objectives', [])  # List of objective objects with standards
-    count = data.get('count', 5)  # Number of questions per objective
+    objectives_data = data.get('objectives', [])  # List of objective texts
+    standards_data = data.get('standards', [])  # List of selected standards
+    count = data.get('count', 3)  # Number of questions per objective
     
     if not objectives_data:
         raise HTTPException(status_code=400, detail="No objectives provided")
+    
+    # Build standards context
+    standards_list = "\n".join([f"- {std}" for std in standards_data]) if standards_data else ""
+    standards_context = f"\n\nAlign questions with these state standards:\n{standards_list}" if standards_list else ""
     
     # Initialize Claude
     api_key = os.environ.get('EMERGENT_LLM_KEY')
@@ -803,9 +808,6 @@ async def generate_questions(data: dict, current_user: dict = Depends(get_curren
     
     for obj_data in objectives_data:
         obj_text = obj_data if isinstance(obj_data, str) else obj_data.get('text', obj_data)
-        standards = obj_data.get('standards', '') if isinstance(obj_data, dict) else ''
-        
-        standards_text = f"\n\nState Standards to align with:\n{standards}" if standards else ""
         
         prompt = f"""Generate {count} multiple choice questions to assess the following learning objective:
 
