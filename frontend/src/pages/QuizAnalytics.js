@@ -242,9 +242,64 @@ const QuizAnalytics = ({ user }) => {
                           {/* Show suggestions if loaded */}
                           {remediationSuggestions[skill.skill] && (
                             <div className="mt-3 p-3 bg-white rounded border">
-                              <div className="font-medium mb-2">Remediation Activities:</div>
-                              <div className="text-sm whitespace-pre-wrap text-gray-700">
-                                {remediationSuggestions[skill.skill]}
+                              <div className="flex justify-between items-center mb-3">
+                                <div className="font-medium">Remediation Activities:</div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    const selectedForSkill = selectedActivities[skill.skill] || {};
+                                    const hasSelected = Object.values(selectedForSkill).some(v => v);
+                                    if (!hasSelected) {
+                                      toast.error('Please select at least one activity to print');
+                                      return;
+                                    }
+                                    window.print();
+                                  }}
+                                  className="print:hidden"
+                                >
+                                  <Printer className="w-4 h-4 mr-2" />
+                                  Print Selected
+                                </Button>
+                              </div>
+                              <div className="space-y-2">
+                                {remediationSuggestions[skill.skill].split(/\n/).filter(line => line.trim()).map((line, idx) => {
+                                  // Extract activity number if present
+                                  const match = line.match(/^(\d+)[\.\)]\s*(.+)/);
+                                  if (match) {
+                                    const activityNum = match[1];
+                                    const activityText = match[2];
+                                    const activityKey = `${skill.skill}-${activityNum}`;
+                                    const isSelected = selectedActivities[skill.skill]?.[activityNum] || false;
+                                    
+                                    return (
+                                      <div key={idx} className={`flex items-start gap-3 p-3 border rounded hover:bg-gray-50 ${isSelected ? 'print:block' : 'print:hidden'}`}>
+                                        <Checkbox
+                                          checked={isSelected}
+                                          onCheckedChange={(checked) => {
+                                            setSelectedActivities(prev => ({
+                                              ...prev,
+                                              [skill.skill]: {
+                                                ...(prev[skill.skill] || {}),
+                                                [activityNum]: checked
+                                              }
+                                            }));
+                                          }}
+                                          className="mt-1 print:hidden"
+                                        />
+                                        <div className="flex-1 text-sm text-gray-700">
+                                          <span className="font-semibold">{activityNum}.</span> {activityText}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  // If no number, just display the line
+                                  return line.trim() && (
+                                    <div key={idx} className="text-sm text-gray-700 pl-8">
+                                      {line}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
