@@ -233,6 +233,7 @@ async def register(user_data: UserRegister):
         email=user_data.email,
         full_name=user_data.full_name,
         state=user_data.state,
+        school=user_data.school,
         join_code=None  # No longer needed
     )
     
