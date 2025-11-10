@@ -736,10 +736,21 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
     all_standards_text = []
     
     for day_plan in plan.get('daily_plans', []):
-        # Collect standards from this day
+        # Collect standards from the standards field
         standards_text = day_plan.get('standards', '')
-        if standards_text:
+        if standards_text and 'see full plan below' not in standards_text.lower():
             all_standards_text.append(standards_text)
+        
+        # ALSO check teaching_lesson field for "2. Standards" or "### 2. Standards" section
+        teaching_lesson = day_plan.get('teaching_lesson', '')
+        if teaching_lesson and '2. Standards' in teaching_lesson:
+            # Extract the standards section from teaching_lesson
+            import re
+            # Look for "### 2. Standards" or "2. Standards" followed by content until next section
+            standards_section_pattern = r'(?:###\s*)?2\.\s*Standards?\s*\n(.*?)(?=\n(?:###\s*)?\d+\.|$)'
+            match = re.search(standards_section_pattern, teaching_lesson, re.IGNORECASE | re.DOTALL)
+            if match:
+                all_standards_text.append(match.group(1))
         
         if day_plan.get('learner_outcomes'):
             # Parse objectives (split by line, bullet points, or numbers)
