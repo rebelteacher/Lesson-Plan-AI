@@ -121,17 +121,29 @@ const QuizAnalytics = ({ user }) => {
 
         {/* Class Selector */}
         <div className="mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {classes.map((cls) => (
-              <Button
-                key={cls.id}
-                onClick={() => selectClass(cls.id)}
-                variant={selectedClass === cls.id ? 'default' : 'outline'}
-                className={selectedClass === cls.id ? 'bg-indigo-600' : ''}
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {classes.map((cls) => (
+                <Button
+                  key={cls.id}
+                  onClick={() => selectClass(cls.id)}
+                  variant={selectedClass === cls.id ? 'default' : 'outline'}
+                  className={selectedClass === cls.id ? 'bg-indigo-600' : ''}
+                >
+                  {cls.name}
+                </Button>
+              ))}
+            </div>
+            {selectedClass && (
+              <Button 
+                onClick={() => navigate(`/groupings/${selectedClass}`)}
+                variant="outline"
+                className="flex items-center gap-2"
               >
-                {cls.name}
+                <Users className="w-4 h-4" />
+                View Groupings
               </Button>
-            ))}
+            )}
           </div>
         </div>
 
