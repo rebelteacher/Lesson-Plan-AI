@@ -145,6 +145,29 @@ const QuizAnalytics = ({ user }) => {
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* Quiz Reports */}
+            {analytics.quizzes && analytics.quizzes.length > 0 && (
+              <Card className="shadow-2xl">
+                <CardHeader>
+                  <CardTitle>Quiz Reports</CardTitle>
+                  <CardDescription>View detailed reports for each quiz</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {analytics.quizzes.map((quiz) => (
+                      <div key={quiz.quiz_id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/test-report/${quiz.quiz_id}`)}>
+                        <div className="font-semibold text-indigo-700 mb-2">{quiz.quiz_title}</div>
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>{quiz.submissions_count} student(s)</span>
+                          <span className="font-bold">{quiz.average_score.toFixed(1)}% avg</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Skills Performance */}
             <Card className="shadow-2xl">
               <CardHeader>
