@@ -113,3 +113,27 @@ code {
         border-bottom-color: inherit;
     }
 }
+
+/* Print Styles for Remediation Activities */
+@media print {
+    @page {
+        margin: 0.5in;
+    }
+    
+    /* Hide non-selected items */
+    .print\:hidden {
+        display: none !important;
+    }
+    
+    /* Show selected items with clear formatting */
+    .print\:block {
+        display: block !important;
+        break-inside: avoid;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Ensure proper page breaks */
+    .print\:break-after-page {
+        page-break-after: always;
+    }
+}
