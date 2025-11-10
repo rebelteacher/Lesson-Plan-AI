@@ -115,6 +115,11 @@ const AdminReviewQueue = ({ user }) => {
   };
 
   const getStatusBadge = (status) => {
+    // Handle undefined or null status
+    if (!status) {
+      status = 'draft';
+    }
+    
     const styles = {
       draft: 'bg-gray-100 text-gray-700',
       pending: 'bg-yellow-100 text-yellow-700',
@@ -130,9 +135,9 @@ const AdminReviewQueue = ({ user }) => {
     };
 
     return (
-      <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-        {icons[status]}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>
+        {icons[status] || icons.draft}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Draft'}
       </span>
     );
   };
