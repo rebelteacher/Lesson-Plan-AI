@@ -99,6 +99,14 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
           <div className="flex gap-2">
             <Button 
+              onClick={() => window.location.href = '/admin/reports'} 
+              className="flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+            >
+              <FileText className="w-4 h-4" />
+              Reports
+            </Button>
+            <Button 
               onClick={() => window.location.href = '/admin/review-queue'} 
               className="flex items-center gap-2"
               style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
