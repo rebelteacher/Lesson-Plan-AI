@@ -66,6 +66,7 @@ class UserRegister(BaseModel):
     password: str
     full_name: str
     state: Optional[str] = None
+    school: Optional[str] = None
     invitation_code: str  # Required invitation code
 
 class UserLogin(BaseModel):
