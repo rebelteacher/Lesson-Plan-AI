@@ -1114,9 +1114,25 @@ async def get_class_analytics(class_id: str, current_user: dict = Depends(get_cu
     for student_id, stats in student_stats.items():
         stats['overall_average'] = stats['total_score'] / stats['count'] if stats['count'] > 0 else 0
     
+    # Get unique quizzes taken in this class
+    quiz_ids = list(set([sub['test_id'] for sub in submissions]))
+    quizzes_data = []
+    for quiz_id in quiz_ids:
+        quiz = await db.quizzes.find_one({"id": quiz_id}, {"_id": 0})
+        if quiz:
+            quiz_submissions = [sub for sub in submissions if sub['test_id'] == quiz_id]
+            avg_score = sum([s['score'] for s in quiz_submissions]) / len(quiz_submissions) if quiz_submissions else 0
+            quizzes_data.append({
+                'quiz_id': quiz_id,
+                'quiz_title': quiz['title'],
+                'submissions_count': len(quiz_submissions),
+                'average_score': avg_score
+            })
+    
     return {
         'skill_stats': list(skill_stats.values()),
-        'student_stats': list(student_stats.values())
+        'student_stats': list(student_stats.values()),
+        'quizzes': quizzes_data
     }
 
 @api_router.post("/analytics/remediation-suggestions")
