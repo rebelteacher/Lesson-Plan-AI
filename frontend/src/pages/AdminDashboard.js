@@ -99,6 +99,14 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
           <div className="flex gap-2">
             <Button 
+              onClick={() => window.location.href = '/admin/review-queue'} 
+              className="flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+            >
+              <FileCheck className="w-4 h-4" />
+              Review Queue
+            </Button>
+            <Button 
               onClick={() => window.location.href = '/admin/invitation-codes'} 
               data-testid="manage-codes-btn"
               className="flex items-center gap-2"
