@@ -814,40 +814,34 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
 
 @api_router.post("/quizzes/generate-questions")
 async def generate_questions(data: dict, current_user: dict = Depends(get_current_user)):
-    objectives_data = data.get('objectives', [])  # List of objective texts
     standards_data = data.get('standards', [])  # List of selected standards
-    count = data.get('count', 3)  # Number of questions per objective
+    count = data.get('count', 3)  # Number of questions per standard
     
-    if not objectives_data:
-        raise HTTPException(status_code=400, detail="No objectives provided")
-    
-    # Build standards context
-    standards_list = "\n".join([f"- {std}" for std in standards_data]) if standards_data else ""
-    standards_context = f"\n\nAlign questions with these state standards:\n{standards_list}" if standards_list else ""
+    if not standards_data:
+        raise HTTPException(status_code=400, detail="No standards provided")
     
     # Initialize Claude
     api_key = os.environ.get('EMERGENT_LLM_KEY')
     chat = LlmChat(
         api_key=api_key,
         session_id=f"quiz_gen_{current_user['id']}_{datetime.now(timezone.utc).isoformat()}",
-        system_message="You are an expert education assessment creator. Generate high-quality multiple choice questions aligned with educational standards."
+        system_message="You are an expert education assessment creator. Generate high-quality multiple choice questions aligned with state educational standards."
     )
     chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
     
     all_questions = []
     
-    for obj_data in objectives_data:
-        obj_text = obj_data if isinstance(obj_data, str) else obj_data.get('text', obj_data)
-        
-        prompt = f"""Generate {count} multiple choice questions to assess the following learning objective:
+    for standard_code in standards_data:
+        prompt = f"""Generate {count} multiple choice questions to assess student understanding of this educational standard:
 
-"{obj_text}"{standards_context}
+Standard: {standard_code}
 
 For each question:
-1. Make it grade-appropriate and clear
+1. Make it grade-appropriate and aligned with the standard
 2. Provide exactly 4 answer options
 3. Indicate which option (0-3) is correct
 4. Ensure distractors are plausible but clearly wrong
+5. Questions should test knowledge, comprehension, or application related to this standard
 
 Return ONLY a JSON array in this exact format:
 [
@@ -855,7 +849,7 @@ Return ONLY a JSON array in this exact format:
     "question_text": "question here",
     "options": ["option 1", "option 2", "option 3", "option 4"],
     "correct_answer": 0,
-    "skill": "{obj_text}"
+    "skill": "{standard_code}"
   }}
 ]
 
