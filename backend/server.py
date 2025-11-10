@@ -1748,6 +1748,161 @@ async def get_test_results_reports(admin_user: dict = Depends(get_admin_user)):
         'schools': schools_list
     }
 
+# Standards Coverage Tracker
+@api_router.get("/analytics/standards-coverage")
+async def get_standards_coverage(timeframe: str = 'quarter', current_user: dict = Depends(get_current_user)):
+    """Track which standards have been assessed"""
+    
+    # Get all quizzes for this teacher
+    quizzes = await db.quizzes.find({"teacher_id": current_user['id']}, {"_id": 0}).to_list(1000)
+    
+    # Extract all unique standards that have been assessed
+    assessed_standards = {}
+    for quiz in quizzes:
+        for question in quiz.get('questions', []):
+            standard = question.get('skill')
+            if standard:
+                if standard not in assessed_standards:
+                    assessed_standards[standard] = {'times_assessed': 0, 'total_score': 0, 'count': 0}
+                assessed_standards[standard]['times_assessed'] += 1
+    
+    # Get submissions to calculate average scores per standard
+    quiz_ids = [q['id'] for q in quizzes]
+    submissions = await db.submissions.find({"test_id": {"$in": quiz_ids}}, {"_id": 0}).to_list(10000)
+    
+    for sub in submissions:
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            if standard in assessed_standards:
+                percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+                assessed_standards[standard]['total_score'] += percentage
+                assessed_standards[standard]['count'] += 1
+    
+    # Calculate averages
+    assessed_list = []
+    for standard, data in assessed_standards.items():
+        avg_score = (data['total_score'] / data['count']) if data['count'] > 0 else 0
+        assessed_list.append({
+            'standard': standard,
+            'times_assessed': data['times_assessed'],
+            'average_score': avg_score
+        })
+    
+    # Sort by standard code
+    assessed_list.sort(key=lambda x: x['standard'])
+    
+    # TODO: Get full list of standards for grade level to identify gaps
+    # For now, just return what we have
+    not_assessed = []  # Would need grade-level standards list
+    
+    coverage_percentage = 100  # Would calculate based on total standards
+    
+    return {
+        'assessed': assessed_list,
+        'assessed_count': len(assessed_list),
+        'not_assessed': not_assessed,
+        'not_assessed_count': len(not_assessed),
+        'coverage_percentage': coverage_percentage
+    }
+
+# At-Risk Students Alerts
+@api_router.get("/analytics/at-risk-students")
+async def get_at_risk_students(threshold: int = 70, current_user: dict = Depends(get_current_user)):
+    """Identify students who need intervention"""
+    
+    # Get all classes for this teacher
+    classes = await db.classes.find({"teacher_id": current_user['id']}, {"_id": 0}).to_list(1000)
+    
+    at_risk_students = []
+    
+    for cls in classes:
+        # Get submissions for this class
+        submissions = await db.submissions.find({"class_id": cls['id']}, {"_id": 0}).to_list(10000)
+        
+        # Group by student
+        student_data = {}
+        for sub in submissions:
+            student_id = sub['student_id']
+            if student_id not in student_data:
+                student_data[student_id] = {'scores': [], 'standards': {}}
+            
+            student_data[student_id]['scores'].append(sub['score'])
+            
+            # Track standards performance
+            for standard, breakdown in sub.get('skills_breakdown', {}).items():
+                if standard not in student_data[student_id]['standards']:
+                    student_data[student_id]['standards'][standard] = {'correct': 0, 'total': 0}
+                student_data[student_id]['standards'][standard]['correct'] += breakdown['correct']
+                student_data[student_id]['standards'][standard]['total'] += breakdown['total']
+        
+        # Identify at-risk students
+        for student_id, data in student_data.items():
+            if not data['scores']:
+                continue
+            
+            avg_score = sum(data['scores']) / len(data['scores'])
+            
+            if avg_score < threshold:
+                # Get student info
+                student = await db.students.find_one({"id": student_id}, {"_id": 0})
+                if not student:
+                    continue
+                
+                # Determine trend
+                trend = 'stable'
+                if len(data['scores']) >= 3:
+                    recent_avg = sum(data['scores'][-3:]) / 3
+                    earlier_avg = sum(data['scores'][:-3]) / len(data['scores'][:-3]) if len(data['scores']) > 3 else avg_score
+                    if recent_avg < earlier_avg - 5:
+                        trend = 'declining'
+                
+                # Determine priority
+                if avg_score < 60 or trend == 'declining':
+                    priority = 'Critical'
+                elif avg_score < 65:
+                    priority = 'High'
+                else:
+                    priority = 'Medium'
+                
+                # Find struggling standards
+                struggling_standards = []
+                for standard, breakdown in data['standards'].items():
+                    percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+                    if percentage < 70:
+                        struggling_standards.append({
+                            'standard': standard,
+                            'percentage': percentage
+                        })
+                
+                struggling_standards.sort(key=lambda x: x['percentage'])
+                
+                at_risk_students.append({
+                    'student_id': student_id,
+                    'name': student['name'],
+                    'class_name': cls['name'],
+                    'average_score': avg_score,
+                    'quizzes_taken': len(data['scores']),
+                    'trend': trend,
+                    'priority_level': priority,
+                    'struggling_standards': struggling_standards
+                })
+    
+    # Sort by priority and score
+    priority_order = {'Critical': 0, 'High': 1, 'Medium': 2}
+    at_risk_students.sort(key=lambda x: (priority_order[x['priority_level']], x['average_score']))
+    
+    # Count by priority
+    critical_count = sum(1 for s in at_risk_students if s['priority_level'] == 'Critical')
+    high_count = sum(1 for s in at_risk_students if s['priority_level'] == 'High')
+    medium_count = sum(1 for s in at_risk_students if s['priority_level'] == 'Medium')
+    
+    return {
+        'students': at_risk_students,
+        'total_count': len(at_risk_students),
+        'critical_count': critical_count,
+        'high_count': high_count,
+        'medium_count': medium_count
+    }
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
