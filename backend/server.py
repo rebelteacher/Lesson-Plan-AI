@@ -125,6 +125,11 @@ class LessonPlan(BaseModel):
     next_major_assessment: str
     daily_plans: List[DayPlan]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    submission_status: str = "draft"  # draft, pending, approved, rejected
+    submitted_at: Optional[datetime] = None
+    reviewed_at: Optional[datetime] = None
+    admin_feedback: Optional[str] = None
+    reviewed_by: Optional[str] = None
 
 class AdminStats(BaseModel):
     total_users: int
