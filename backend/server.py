@@ -759,10 +759,10 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
 
 @api_router.post("/quizzes/generate-questions")
 async def generate_questions(data: dict, current_user: dict = Depends(get_current_user)):
-    objectives = data.get('objectives', [])  # List of objective texts
+    objectives_data = data.get('objectives', [])  # List of objective objects with standards
     count = data.get('count', 5)  # Number of questions per objective
     
-    if not objectives:
+    if not objectives_data:
         raise HTTPException(status_code=400, detail="No objectives provided")
     
     # Initialize Claude
@@ -770,16 +770,21 @@ async def generate_questions(data: dict, current_user: dict = Depends(get_curren
     chat = LlmChat(
         api_key=api_key,
         session_id=f"quiz_gen_{current_user['id']}_{datetime.now(timezone.utc).isoformat()}",
-        system_message="You are an expert education assessment creator. Generate high-quality multiple choice questions."
+        system_message="You are an expert education assessment creator. Generate high-quality multiple choice questions aligned with educational standards."
     )
     chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
     
     all_questions = []
     
-    for obj in objectives:
+    for obj_data in objectives_data:
+        obj_text = obj_data if isinstance(obj_data, str) else obj_data.get('text', obj_data)
+        standards = obj_data.get('standards', '') if isinstance(obj_data, dict) else ''
+        
+        standards_text = f"\n\nState Standards to align with:\n{standards}" if standards else ""
+        
         prompt = f"""Generate {count} multiple choice questions to assess the following learning objective:
 
-"{obj}"
+"{obj_text}"{standards_text}
 
 For each question:
 1. Make it grade-appropriate and clear
