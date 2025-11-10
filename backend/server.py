@@ -811,7 +811,7 @@ async def generate_questions(data: dict, current_user: dict = Depends(get_curren
         
         prompt = f"""Generate {count} multiple choice questions to assess the following learning objective:
 
-"{obj_text}"{standards_text}
+"{obj_text}"{standards_context}
 
 For each question:
 1. Make it grade-appropriate and clear
