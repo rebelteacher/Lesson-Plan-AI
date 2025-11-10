@@ -1400,6 +1400,79 @@ async def get_student_profile(student_id: str, current_user: dict = Depends(get_
         'needs_support': needs_support
     }
 
+# Enhanced Groupings View
+@api_router.get("/analytics/groupings/{class_id}")
+async def get_groupings(class_id: str, current_user: dict = Depends(get_current_user)):
+    # Get class info
+    class_data = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    if not class_data:
+        raise HTTPException(status_code=404, detail="Class not found")
+    
+    # Get all submissions for this class
+    submissions = await db.submissions.find({"class_id": class_id}, {"_id": 0}).to_list(10000)
+    
+    if not submissions:
+        return {"class_name": class_data['name'], "groupings": []}
+    
+    # Get students
+    students = await db.students.find({"id": {"$in": class_data['student_ids']}}, {"_id": 0}).to_list(1000)
+    student_map = {s['id']: s for s in students}
+    
+    # Calculate standards performance per student
+    standards_data = {}
+    for sub in submissions:
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            if standard not in standards_data:
+                standards_data[standard] = {}
+            
+            student_id = sub['student_id']
+            if student_id not in standards_data[standard]:
+                standards_data[standard][student_id] = {
+                    'total_correct': 0,
+                    'total_attempts': 0
+                }
+            
+            standards_data[standard][student_id]['total_correct'] += breakdown['correct']
+            standards_data[standard][student_id]['total_attempts'] += breakdown['total']
+    
+    # Create groupings for students who need support (<70%)
+    groupings = []
+    for standard, student_data in standards_data.items():
+        students_struggling = []
+        total_percentage = 0
+        
+        for student_id, data in student_data.items():
+            percentage = (data['total_correct'] / data['total_attempts'] * 100) if data['total_attempts'] > 0 else 0
+            
+            if percentage < 70:
+                student_name = student_map.get(student_id, {}).get('name', 'Unknown')
+                students_struggling.append({
+                    'student_id': student_id,
+                    'name': student_name,
+                    'percentage': percentage
+                })
+                total_percentage += percentage
+        
+        if students_struggling:
+            # Sort by percentage (lowest first)
+            students_struggling.sort(key=lambda x: x['percentage'])
+            
+            average = total_percentage / len(students_struggling) if students_struggling else 0
+            
+            groupings.append({
+                'standard': standard,
+                'students': students_struggling,
+                'average': average
+            })
+    
+    # Sort groupings by number of students (most first)
+    groupings.sort(key=lambda x: len(x['students']), reverse=True)
+    
+    return {
+        'class_name': class_data['name'],
+        'groupings': groupings
+    }
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
