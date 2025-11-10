@@ -1575,8 +1575,15 @@ async def get_groupings(class_id: str, current_user: dict = Depends(get_current_
 async def get_lesson_plan_reports(admin_user: dict = Depends(get_admin_user)):
     """Get comprehensive lesson plan status report"""
     
-    # Get all lesson plans
-    all_plans = await db.lesson_plans.find({}, {"_id": 0}).to_list(10000)
+    # Get admin's supervised teachers
+    admin = await db.users.find_one({"id": admin_user['id']}, {"_id": 0})
+    supervised_ids = admin.get('supervised_teacher_ids', [])
+    
+    # If no supervision set, show all (backward compatibility)
+    if supervised_ids:
+        all_plans = await db.lesson_plans.find({"user_id": {"$in": supervised_ids}}, {"_id": 0}).to_list(10000)
+    else:
+        all_plans = await db.lesson_plans.find({}, {"_id": 0}).to_list(10000)
     
     # Count by status
     status_counts = {
