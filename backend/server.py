@@ -1699,7 +1699,7 @@ async def get_test_results_reports(admin_user: dict = Depends(get_admin_user)):
                     standards_data[standard]['correct'] += breakdown['correct']
                     standards_data[standard]['total'] += breakdown['total']
             
-            standards_mastered = sum(1 for std in standards_data.values() if (std['correct'] / std['total'] * 100) >= 80 if std['total'] > 0 else 0)
+            standards_mastered = sum(1 for std in standards_data.values() if std['total'] > 0 and (std['correct'] / std['total'] * 100) >= 80)
             
             student_stats.append({
                 'student_id': student_id,
