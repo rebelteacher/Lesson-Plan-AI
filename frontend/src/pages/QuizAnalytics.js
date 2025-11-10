@@ -14,6 +14,7 @@ const QuizAnalytics = ({ user }) => {
   const [analytics, setAnalytics] = useState(null);
   const [remediationSuggestions, setRemediationSuggestions] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingRemediation, setLoadingRemediation] = useState({});
 
   useEffect(() => {
     fetchClasses();
