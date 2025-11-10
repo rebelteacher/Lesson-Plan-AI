@@ -95,6 +95,12 @@ const CreateQuiz = ({ user }) => {
     ));
   };
 
+  const toggleStandard = (id) => {
+    setStandards(standards.map(std => 
+      std.id === id ? { ...std, selected: !std.selected } : std
+    ));
+  };
+
   const generateQuestions = async () => {
     const selectedObjectives = objectives.filter(obj => obj.selected).map(obj => ({
       text: obj.text,
