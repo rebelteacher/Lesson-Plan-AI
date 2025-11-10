@@ -8,6 +8,7 @@ import CreateLessonPlan from '@/pages/CreateLessonPlan';
 import ViewLessonPlan from '@/pages/ViewLessonPlan';
 import InvitationCodes from '@/pages/InvitationCodes';
 import AdminSettings from '@/pages/AdminSettings';
+import AdminReviewQueue from '@/pages/AdminReviewQueue';
 import ClassManagement from '@/pages/ClassManagement';
 import CreateQuiz from '@/pages/CreateQuiz';
 import QuizAnalytics from '@/pages/QuizAnalytics';
