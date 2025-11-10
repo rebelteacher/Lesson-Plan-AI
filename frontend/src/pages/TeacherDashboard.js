@@ -56,6 +56,45 @@ const TeacherDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleSubmitToAdmin = async (planId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/lesson-plans/${planId}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        toast.success('Lesson plan submitted to admin for review!');
+        fetchLessonPlans(); // Refresh to show updated status
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Failed to submit lesson plan');
+      }
+    } catch (error) {
+      toast.error('Error submitting lesson plan');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    if (!status || status === 'draft') return null;
+    
+    const badges = {
+      pending: { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', text: '⏳ Pending Review' },
+      approved: { color: 'bg-green-100 text-green-700 border-green-300', text: '✓ Approved' },
+      rejected: { color: 'bg-red-100 text-red-700 border-red-300', text: '✗ Needs Revision' }
+    };
+    
+    const badge = badges[status];
+    if (!badge) return null;
+    
+    return (
+      <div className={`text-xs px-2 py-1 rounded-full border ${badge.color} font-medium`}>
+        {badge.text}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%)' }}>
       <div className="container mx-auto px-4 py-8">
