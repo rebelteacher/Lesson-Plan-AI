@@ -285,56 +285,35 @@ const CreateQuiz = ({ user }) => {
           {step === 1 && (
             <Card className="shadow-2xl">
               <CardHeader>
-                <CardTitle>Select Learning Objectives</CardTitle>
-                <CardDescription>Choose which objectives to include in the quiz</CardDescription>
+                <CardTitle>Select State Standards</CardTitle>
+                <CardDescription>Choose which standards to include in the quiz</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Objectives Section */}
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3">Learning Objectives</h3>
-                    <div className="space-y-3">
-                      {objectives.map((obj) => (
-                        <div key={obj.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                {/* Standards Section */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">State Standards</h3>
+                  {standards.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {standards.map((std) => (
+                        <div key={std.id} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
                           <Checkbox
-                            checked={obj.selected}
-                            onCheckedChange={() => toggleObjective(obj.id)}
+                            checked={std.selected}
+                            onCheckedChange={() => toggleStandard(std.id)}
                           />
-                          <div className="flex-1">
-                            <div className="font-medium">{obj.text}</div>
-                            <div className="text-sm text-gray-500">{obj.day} - {obj.date}</div>
-                          </div>
+                          <span className="text-sm font-mono">{std.text}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Standards Section */}
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3">State Standards</h3>
-                    {standards.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {standards.map((std) => (
-                          <div key={std.id} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
-                            <Checkbox
-                              checked={std.selected}
-                              onCheckedChange={() => toggleStandard(std.id)}
-                            />
-                            <span className="text-sm font-mono">{std.text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-500 italic p-4 border rounded bg-gray-50">
-                        No standard codes found in this lesson plan. Questions will be generated based on objectives only.
-                      </div>
-                    )}
-                  </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic p-4 border rounded bg-gray-50">
+                      No standard codes found in this lesson plan. Cannot generate quiz without standards.
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   onClick={generateQuestions}
-                  disabled={loading || objectives.filter(o => o.selected).length === 0}
+                  disabled={loading || standards.filter(s => s.selected).length === 0}
                   className="w-full flex items-center justify-center gap-2 mt-6"
                   style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
                 >
