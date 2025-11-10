@@ -13,6 +13,7 @@ const QuizAnalytics = ({ user }) => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [remediationSuggestions, setRemediationSuggestions] = useState({});
+  const [selectedActivities, setSelectedActivities] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingRemediation, setLoadingRemediation] = useState({});
 
