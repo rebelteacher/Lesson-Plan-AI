@@ -572,6 +572,94 @@ async def export_lesson_plan(plan_id: str, current_user: dict = Depends(get_curr
         headers={"Content-Disposition": f"attachment; filename=lesson_plan_{plan_id}.docx"}
     )
 
+# Lesson Plan Submission Routes
+@api_router.post("/lesson-plans/{plan_id}/submit")
+async def submit_lesson_plan(plan_id: str, current_user: dict = Depends(get_current_user)):
+    """Teacher submits lesson plan to admin for review"""
+    plan = await db.lesson_plans.find_one({"id": plan_id, "user_id": current_user['id']})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Lesson plan not found")
+    
+    if plan.get('submission_status') == 'pending':
+        raise HTTPException(status_code=400, detail="Plan already submitted for review")
+    
+    # Update submission status
+    await db.lesson_plans.update_one(
+        {"id": plan_id},
+        {"$set": {
+            "submission_status": "pending",
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
+            "admin_feedback": None,
+            "reviewed_at": None,
+            "reviewed_by": None
+        }}
+    )
+    
+    return {"message": "Lesson plan submitted for review"}
+
+@api_router.get("/admin/lesson-plans/pending")
+async def get_pending_submissions(admin_user: dict = Depends(get_admin_user)):
+    """Admin views all pending lesson plan submissions"""
+    pending_plans = await db.lesson_plans.find(
+        {"submission_status": "pending"},
+        {"_id": 0}
+    ).sort("submitted_at", -1).to_list(1000)
+    
+    # Get teacher info for each plan
+    for plan in pending_plans:
+        teacher = await db.users.find_one({"id": plan['user_id']}, {"_id": 0, "full_name": 1, "email": 1})
+        if teacher:
+            plan['teacher_name'] = teacher['full_name']
+            plan['teacher_email'] = teacher['email']
+    
+    return pending_plans
+
+@api_router.get("/admin/lesson-plans/all")
+async def get_all_lesson_plans(admin_user: dict = Depends(get_admin_user)):
+    """Admin views all lesson plans regardless of status"""
+    all_plans = await db.lesson_plans.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    # Get teacher info for each plan
+    for plan in all_plans:
+        teacher = await db.users.find_one({"id": plan['user_id']}, {"_id": 0, "full_name": 1, "email": 1})
+        if teacher:
+            plan['teacher_name'] = teacher['full_name']
+            plan['teacher_email'] = teacher['email']
+    
+    return all_plans
+
+@api_router.post("/admin/lesson-plans/{plan_id}/review")
+async def review_lesson_plan(
+    plan_id: str, 
+    review_data: dict,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Admin approves or rejects a lesson plan with feedback"""
+    plan = await db.lesson_plans.find_one({"id": plan_id})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Lesson plan not found")
+    
+    status = review_data.get('status')  # 'approved' or 'rejected'
+    feedback = review_data.get('feedback', '')
+    
+    if status not in ['approved', 'rejected']:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    # Update lesson plan
+    await db.lesson_plans.update_one(
+        {"id": plan_id},
+        {"$set": {
+            "submission_status": status,
+            "admin_feedback": feedback,
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "reviewed_by": admin_user['id']
+        }}
+    )
+    
+    return {"message": f"Lesson plan {status}"}
 
 # Class Management Routes
 @api_router.post("/classes")
