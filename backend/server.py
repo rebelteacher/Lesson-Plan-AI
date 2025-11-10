@@ -760,12 +760,18 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
     import re
     unique_standards = set()
     for standards_text in all_standards_text:
-        # Look for patterns like: 5.3.A, 6.2.B, CCSS.ELA-LITERACY.RI.8.2, MS.SS.7.3, etc.
-        # Match patterns: numbers.letters, letters.numbers, or standard codes
-        standard_pattern = r'\b(?:[A-Z]{2,}[\.\-][A-Z0-9\.\-]+|[0-9]+\.[0-9A-Z]+(?:\.[A-Z0-9]+)?)\b'
+        # Skip placeholder text
+        if 'see full plan below' in standards_text.lower():
+            continue
+            
+        # Look for patterns like: MS.SS.7.3, 7.2.3, CCSS.ELA-LITERACY.RI.8.2, etc.
+        # More specific pattern: starts with letters or numbers, has dots/dashes, ends with numbers/letters
+        standard_pattern = r'\b(?:[A-Z]+\.(?:[A-Z]+\.)?[0-9]+(?:\.[0-9]+)*(?:\.[A-Z]+)?|[0-9]+\.[0-9]+(?:\.[0-9A-Z]+)*)\b'
         matches = re.findall(standard_pattern, standards_text, re.IGNORECASE)
         for match in matches:
-            unique_standards.add(match.strip())
+            # Filter out false positives (must contain at least one digit)
+            if re.search(r'\d', match):
+                unique_standards.add(match.strip())
     
     # Create standards list
     standards_list = [
