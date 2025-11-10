@@ -16,6 +16,7 @@ const CreateQuiz = ({ user }) => {
   const [step, setStep] = useState(1); // 1: select objectives, 2: review questions, 3: publish
   const [lessonPlan, setLessonPlan] = useState(null);
   const [objectives, setObjectives] = useState([]);
+  const [standards, setStandards] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [quizTitle, setQuizTitle] = useState('');
   const [loading, setLoading] = useState(false);
