@@ -731,31 +731,56 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
     
-    # Extract all learner outcomes and standards from daily plans
+    # Extract objectives and collect all standards
     objectives = []
+    all_standards_text = []
+    
     for day_plan in plan.get('daily_plans', []):
-        # Get standards for this day
-        standards = day_plan.get('standards', '')
+        # Collect standards from this day
+        standards_text = day_plan.get('standards', '')
+        if standards_text:
+            all_standards_text.append(standards_text)
         
         if day_plan.get('learner_outcomes'):
             # Parse objectives (split by line, bullet points, or numbers)
             text = day_plan['learner_outcomes']
-            # Simple parsing - split by newlines and clean up
             lines = [line.strip() for line in text.split('\n') if line.strip()]
             for line in lines:
-                # Remove bullets, numbers, dashes
                 clean_line = line.lstrip('•-*123456789.() ').strip()
-                if len(clean_line) > 10:  # Only keep meaningful objectives
+                if len(clean_line) > 10:
                     objectives.append({
                         'id': str(uuid.uuid4()),
                         'text': clean_line,
                         'day': day_plan['day_name'],
                         'date': day_plan['day_date'],
-                        'standards': standards,  # Add standards from lesson plan
-                        'selected': True  # Default to selected
+                        'selected': True
                     })
     
-    return {"objectives": objectives}
+    # Parse and deduplicate standards
+    unique_standards = set()
+    for standards_text in all_standards_text:
+        # Split by common delimiters
+        lines = standards_text.replace(',', '\n').replace(';', '\n').split('\n')
+        for line in lines:
+            clean = line.strip().lstrip('•-*').strip()
+            # Look for standard codes (e.g., MS.SS.7.3, CCSS.ELA-LITERACY.RI.8.2)
+            if clean and len(clean) > 3:
+                unique_standards.add(clean)
+    
+    # Create standards list
+    standards_list = [
+        {
+            'id': str(uuid.uuid4()),
+            'text': std,
+            'selected': True
+        }
+        for std in sorted(unique_standards)
+    ]
+    
+    return {
+        "objectives": objectives,
+        "standards": standards_list
+    }
 
 @api_router.post("/quizzes/generate-questions")
 async def generate_questions(data: dict, current_user: dict = Depends(get_current_user)):
