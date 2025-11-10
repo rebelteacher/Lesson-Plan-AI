@@ -310,9 +310,9 @@ const CreateQuiz = ({ user }) => {
                   </div>
 
                   {/* Standards Section */}
-                  {standards.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-lg mb-3">State Standards</h3>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">State Standards</h3>
+                    {standards.length > 0 ? (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {standards.map((std) => (
                           <div key={std.id} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
@@ -324,8 +324,12 @@ const CreateQuiz = ({ user }) => {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="text-sm text-gray-500 italic p-4 border rounded bg-gray-50">
+                        No standard codes found in this lesson plan. Questions will be generated based on objectives only.
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <Button
