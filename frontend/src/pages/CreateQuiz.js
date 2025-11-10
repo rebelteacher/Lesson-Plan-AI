@@ -289,29 +289,49 @@ const CreateQuiz = ({ user }) => {
                 <CardDescription>Choose which objectives to include in the quiz</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4 mb-6">
-                  {objectives.map((obj) => (
-                    <div key={obj.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <Checkbox
-                        checked={obj.selected}
-                        onCheckedChange={() => toggleObjective(obj.id)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{obj.text}</div>
-                        <div className="text-sm text-gray-500">{obj.day} - {obj.date}</div>
-                        {obj.standards && (
-                          <div className="text-xs text-indigo-600 mt-1 font-medium">
-                            📋 Standards: {obj.standards.substring(0, 100)}...
+                <div className="space-y-6">
+                  {/* Objectives Section */}
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Learning Objectives</h3>
+                    <div className="space-y-3">
+                      {objectives.map((obj) => (
+                        <div key={obj.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                          <Checkbox
+                            checked={obj.selected}
+                            onCheckedChange={() => toggleObjective(obj.id)}
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{obj.text}</div>
+                            <div className="text-sm text-gray-500">{obj.day} - {obj.date}</div>
                           </div>
-                        )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Standards Section */}
+                  {standards.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3">State Standards</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {standards.map((std) => (
+                          <div key={std.id} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
+                            <Checkbox
+                              checked={std.selected}
+                              onCheckedChange={() => toggleStandard(std.id)}
+                            />
+                            <span className="text-sm font-mono">{std.text}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
+
                 <Button
                   onClick={generateQuestions}
                   disabled={loading || objectives.filter(o => o.selected).length === 0}
-                  className="w-full flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 mt-6"
                   style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
                 >
                   {loading ? (
