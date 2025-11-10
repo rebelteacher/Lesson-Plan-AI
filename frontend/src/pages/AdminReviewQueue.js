@@ -26,6 +26,12 @@ const AdminReviewQueue = ({ user }) => {
     try {
       const token = localStorage.getItem('token');
       
+      if (!token) {
+        toast.error('Not authenticated. Please log in.');
+        setLoading(false);
+        return;
+      }
+      
       // Fetch pending plans
       const pendingRes = await fetch(`${BACKEND_URL}/api/admin/lesson-plans/pending`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -33,10 +39,17 @@ const AdminReviewQueue = ({ user }) => {
       
       if (pendingRes.ok) {
         const pendingData = await pendingRes.json();
-        setPendingPlans(pendingData);
+        console.log('Pending plans data:', pendingData);
+        setPendingPlans(Array.isArray(pendingData) ? pendingData : []);
       } else {
-        const errorData = await pendingRes.json();
-        console.error('Error fetching pending plans:', errorData);
+        const errorText = await pendingRes.text();
+        console.error('Error response:', pendingRes.status, errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { detail: errorText };
+        }
         toast.error(`Error loading pending plans: ${errorData.detail || 'Unknown error'}`);
       }
       
@@ -47,10 +60,17 @@ const AdminReviewQueue = ({ user }) => {
       
       if (allRes.ok) {
         const allData = await allRes.json();
-        setAllPlans(allData);
+        console.log('All plans data:', allData);
+        setAllPlans(Array.isArray(allData) ? allData : []);
       } else {
-        const errorData = await allRes.json();
-        console.error('Error fetching all plans:', errorData);
+        const errorText = await allRes.text();
+        console.error('Error response:', allRes.status, errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { detail: errorText };
+        }
         toast.error(`Error loading all plans: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
