@@ -34,6 +34,10 @@ const AdminReviewQueue = ({ user }) => {
       if (pendingRes.ok) {
         const pendingData = await pendingRes.json();
         setPendingPlans(pendingData);
+      } else {
+        const errorData = await pendingRes.json();
+        console.error('Error fetching pending plans:', errorData);
+        toast.error(`Error loading pending plans: ${errorData.detail || 'Unknown error'}`);
       }
       
       // Fetch all plans
@@ -44,9 +48,14 @@ const AdminReviewQueue = ({ user }) => {
       if (allRes.ok) {
         const allData = await allRes.json();
         setAllPlans(allData);
+      } else {
+        const errorData = await allRes.json();
+        console.error('Error fetching all plans:', errorData);
+        toast.error(`Error loading all plans: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
-      toast.error('Error loading plans');
+      console.error('Error in fetchPlans:', error);
+      toast.error(`Error loading plans: ${error.message}`);
     } finally {
       setLoading(false);
     }
