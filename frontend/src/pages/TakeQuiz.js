@@ -38,12 +38,40 @@ const TakeQuiz = () => {
     }
   };
 
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const fetchQuiz = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/quizzes/${quizId}`);
       if (response.ok) {
         const data = await response.json();
-        setQuiz(data);
+        
+        // Randomize questions
+        const shuffledQuestions = shuffleArray(data.questions);
+        
+        // Randomize answer options for each question
+        const randomizedQuestions = shuffledQuestions.map(question => {
+          const optionsWithIndex = question.options.map((opt, idx) => ({ option: opt, originalIndex: idx }));
+          const shuffledOptions = shuffleArray(optionsWithIndex);
+          
+          // Find new position of correct answer
+          const newCorrectIndex = shuffledOptions.findIndex(item => item.originalIndex === question.correct_answer);
+          
+          return {
+            ...question,
+            options: shuffledOptions.map(item => item.option),
+            correct_answer: newCorrectIndex
+          };
+        });
+        
+        setQuiz({ ...data, questions: randomizedQuestions });
       }
     } catch (error) {
       toast.error('Error loading quiz');
