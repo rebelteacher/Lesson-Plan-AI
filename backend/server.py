@@ -1904,6 +1904,38 @@ async def get_at_risk_students(threshold: int = 70, current_user: dict = Depends
         'medium_count': medium_count
     }
 
+# Admin Teacher Supervision
+@api_router.get("/admin/teachers")
+async def get_all_teachers(admin_user: dict = Depends(get_admin_user)):
+    """Get list of all teachers for supervision assignment"""
+    teachers = await db.users.find({"role": "teacher"}, {"_id": 0}).to_list(1000)
+    
+    # Get current admin's supervised teachers
+    admin = await db.users.find_one({"id": admin_user['id']}, {"_id": 0})
+    supervised_ids = admin.get('supervised_teacher_ids', [])
+    
+    # Mark which teachers are supervised
+    for teacher in teachers:
+        teacher['is_supervised'] = teacher['id'] in supervised_ids
+    
+    return {
+        'teachers': teachers,
+        'supervised_ids': supervised_ids
+    }
+
+@api_router.post("/admin/update-supervision")
+async def update_teacher_supervision(data: dict, admin_user: dict = Depends(get_admin_user)):
+    """Update which teachers this admin supervises"""
+    teacher_ids = data.get('teacher_ids', [])
+    
+    # Update admin's supervised_teacher_ids
+    await db.users.update_one(
+        {"id": admin_user['id']},
+        {"$set": {"supervised_teacher_ids": teacher_ids}}
+    )
+    
+    return {"message": "Supervision updated successfully"}
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
