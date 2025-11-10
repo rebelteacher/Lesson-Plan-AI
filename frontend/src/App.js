@@ -146,6 +146,14 @@ function App() {
               element={user && user.role === 'teacher' ? <GroupingView user={user} /> : <Navigate to="/" />} 
             />
             <Route 
+              path="/standards-coverage" 
+              element={user && user.role === 'teacher' ? <StandardsCoverage user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/at-risk-students" 
+              element={user && user.role === 'teacher' ? <AtRiskStudents user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
               path="/student/join" 
               element={<StudentJoin />} 
             />
