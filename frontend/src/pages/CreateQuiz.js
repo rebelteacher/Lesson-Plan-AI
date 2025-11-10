@@ -286,6 +286,11 @@ const CreateQuiz = ({ user }) => {
                       <div className="flex-1">
                         <div className="font-medium">{obj.text}</div>
                         <div className="text-sm text-gray-500">{obj.day} - {obj.date}</div>
+                        {obj.standards && (
+                          <div className="text-xs text-indigo-600 mt-1 font-medium">
+                            📋 Standards: {obj.standards.substring(0, 100)}...
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
