@@ -120,10 +120,16 @@ const StudentProfile = ({ user }) => {
               <p className="text-gray-600 mt-2">{profile.student_name}</p>
             </div>
             
-            <Button onClick={() => window.print()} variant="outline">
-              <Printer className="w-4 h-4 mr-2" />
-              Print
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={exportStudentData} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={() => window.print()} variant="outline">
+                <Printer className="w-4 h-4 mr-2" />
+                Print
+              </Button>
+            </div>
           </div>
         </div>
 
