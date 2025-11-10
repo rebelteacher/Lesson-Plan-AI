@@ -756,16 +756,16 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
                         'selected': True
                     })
     
-    # Parse and deduplicate standards
+    # Parse and deduplicate standards - extract only standard numbers/codes
+    import re
     unique_standards = set()
     for standards_text in all_standards_text:
-        # Split by common delimiters
-        lines = standards_text.replace(',', '\n').replace(';', '\n').split('\n')
-        for line in lines:
-            clean = line.strip().lstrip('•-*').strip()
-            # Look for standard codes (e.g., MS.SS.7.3, CCSS.ELA-LITERACY.RI.8.2)
-            if clean and len(clean) > 3:
-                unique_standards.add(clean)
+        # Look for patterns like: 5.3.A, 6.2.B, CCSS.ELA-LITERACY.RI.8.2, MS.SS.7.3, etc.
+        # Match patterns: numbers.letters, letters.numbers, or standard codes
+        standard_pattern = r'\b(?:[A-Z]{2,}[\.\-][A-Z0-9\.\-]+|[0-9]+\.[0-9A-Z]+(?:\.[A-Z0-9]+)?)\b'
+        matches = re.findall(standard_pattern, standards_text, re.IGNORECASE)
+        for match in matches:
+            unique_standards.add(match.strip())
     
     # Create standards list
     standards_list = [
