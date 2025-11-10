@@ -1567,6 +1567,185 @@ async def get_groupings(class_id: str, current_user: dict = Depends(get_current_
         'groupings': groupings
     }
 
+# Admin Reports - Lesson Plans
+@api_router.get("/admin/reports/lesson-plans")
+async def get_lesson_plan_reports(admin_user: dict = Depends(get_admin_user)):
+    """Get comprehensive lesson plan status report"""
+    
+    # Get all lesson plans
+    all_plans = await db.lesson_plans.find({}, {"_id": 0}).to_list(10000)
+    
+    # Count by status
+    status_counts = {
+        'draft': 0,
+        'pending': 0,
+        'approved': 0,
+        'rejected': 0
+    }
+    
+    for plan in all_plans:
+        status = plan.get('submission_status', 'draft')
+        if status in status_counts:
+            status_counts[status] += 1
+    
+    # Get teacher breakdown
+    teachers = await db.users.find({"role": "teacher"}, {"_id": 0}).to_list(1000)
+    teacher_stats = []
+    
+    for teacher in teachers:
+        teacher_plans = [p for p in all_plans if p['user_id'] == teacher['id']]
+        total = len(teacher_plans)
+        
+        if total == 0:
+            continue
+        
+        draft = len([p for p in teacher_plans if p.get('submission_status', 'draft') == 'draft'])
+        pending = len([p for p in teacher_plans if p.get('submission_status') == 'pending'])
+        approved = len([p for p in teacher_plans if p.get('submission_status') == 'approved'])
+        rejected = len([p for p in teacher_plans if p.get('submission_status') == 'rejected'])
+        
+        # Calculate submission rate (approved + pending / total)
+        submission_rate = ((approved + pending) / total * 100) if total > 0 else 0
+        
+        teacher_stats.append({
+            'teacher_id': teacher['id'],
+            'name': teacher['full_name'],
+            'school': teacher.get('school', 'N/A'),
+            'total': total,
+            'draft': draft,
+            'pending': pending,
+            'approved': approved,
+            'rejected': rejected,
+            'submission_rate': round(submission_rate, 1)
+        })
+    
+    # Sort by submission rate (lowest first - needs attention)
+    teacher_stats.sort(key=lambda x: x['submission_rate'])
+    
+    return {
+        **status_counts,
+        'teachers': teacher_stats
+    }
+
+# Admin Reports - Test Results
+@api_router.get("/admin/reports/test-results")
+async def get_test_results_reports(admin_user: dict = Depends(get_admin_user)):
+    """Get comprehensive test results with school/class/student drill-down"""
+    
+    # Get all classes with teacher info
+    classes = await db.classes.find({}, {"_id": 0}).to_list(1000)
+    
+    # Get all teachers
+    teachers = await db.users.find({"role": "teacher"}, {"_id": 0}).to_list(1000)
+    teacher_map = {t['id']: t for t in teachers}
+    
+    # Get all submissions
+    submissions = await db.submissions.find({}, {"_id": 0}).to_list(10000)
+    
+    # Get all students
+    students = await db.students.find({}, {"_id": 0}).to_list(10000)
+    student_map = {s['id']: s for s in students}
+    
+    # Organize by school
+    schools_data = {}
+    
+    for cls in classes:
+        teacher = teacher_map.get(cls['teacher_id'], {})
+        school_name = teacher.get('school', 'Unknown School')
+        
+        if school_name not in schools_data:
+            schools_data[school_name] = {
+                'name': school_name,
+                'classes': [],
+                'total_classes': 0,
+                'total_students': 0,
+                'total_quizzes': 0,
+                'total_score': 0,
+                'submission_count': 0
+            }
+        
+        # Get submissions for this class
+        class_submissions = [s for s in submissions if s.get('class_id') == cls['id']]
+        
+        if not class_submissions:
+            continue
+        
+        # Calculate class stats
+        class_scores = [s['score'] for s in class_submissions]
+        class_average = sum(class_scores) / len(class_scores) if class_scores else 0
+        
+        # Get unique quizzes
+        unique_quizzes = len(set([s['test_id'] for s in class_submissions]))
+        
+        # Get student stats for this class
+        student_stats = []
+        for student_id in cls.get('student_ids', []):
+            student = student_map.get(student_id)
+            if not student:
+                continue
+            
+            student_submissions = [s for s in class_submissions if s['student_id'] == student_id]
+            if not student_submissions:
+                continue
+            
+            scores = [s['score'] for s in student_submissions]
+            
+            # Calculate standards mastered
+            standards_data = {}
+            for sub in student_submissions:
+                for standard, breakdown in sub.get('skills_breakdown', {}).items():
+                    if standard not in standards_data:
+                        standards_data[standard] = {'correct': 0, 'total': 0}
+                    standards_data[standard]['correct'] += breakdown['correct']
+                    standards_data[standard]['total'] += breakdown['total']
+            
+            standards_mastered = sum(1 for std in standards_data.values() if (std['correct'] / std['total'] * 100) >= 80 if std['total'] > 0 else 0)
+            
+            student_stats.append({
+                'student_id': student_id,
+                'name': student['name'],
+                'quizzes_taken': len(student_submissions),
+                'average': sum(scores) / len(scores) if scores else 0,
+                'highest': max(scores) if scores else 0,
+                'lowest': min(scores) if scores else 0,
+                'standards_mastered': standards_mastered
+            })
+        
+        class_info = {
+            'class_id': cls['id'],
+            'class_name': cls['name'],
+            'teacher_name': teacher.get('full_name', 'Unknown'),
+            'student_count': len(cls.get('student_ids', [])),
+            'quiz_count': unique_quizzes,
+            'class_average': class_average,
+            'students': student_stats
+        }
+        
+        schools_data[school_name]['classes'].append(class_info)
+        schools_data[school_name]['total_classes'] += 1
+        schools_data[school_name]['total_students'] += len(cls.get('student_ids', []))
+        schools_data[school_name]['total_quizzes'] += unique_quizzes
+        schools_data[school_name]['total_score'] += sum(class_scores)
+        schools_data[school_name]['submission_count'] += len(class_submissions)
+    
+    # Calculate school averages
+    schools_list = []
+    for school_name, school_data in schools_data.items():
+        if school_data['submission_count'] > 0:
+            school_data['average_score'] = school_data['total_score'] / school_data['submission_count']
+        else:
+            school_data['average_score'] = 0
+        del school_data['total_score']
+        del school_data['submission_count']
+        schools_list.append(school_data)
+    
+    # Sort by average score descending
+    schools_list.sort(key=lambda x: x['average_score'], reverse=True)
+    
+    return {
+        'schools': schools_list
+    }
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
