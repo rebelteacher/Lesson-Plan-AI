@@ -153,7 +153,7 @@ const CreateQuiz = ({ user }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ standards: [skill], count: 3 })
+        body: JSON.stringify({ standards: [skill], count: 5 })
       });
       
       if (response.ok) {
