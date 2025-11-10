@@ -333,35 +333,61 @@ const CreateQuiz = ({ user }) => {
             <Card className="shadow-2xl">
               <CardHeader>
                 <CardTitle>Review & Edit Questions ({questions.length} total)</CardTitle>
-                <CardDescription>Delete unwanted questions or request more</CardDescription>
+                <CardDescription>Delete unwanted questions or request more for each standard</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {questions.map((q, index) => (
-                    <div key={q.id} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <div className="font-bold text-sm text-indigo-600 mb-1">Skill: {q.skill}</div>
-                          <div className="font-medium mb-2">Q{index + 1}. {q.question_text}</div>
-                        </div>
-                        <Button
-                          onClick={() => deleteQuestion(q.id)}
-                          variant="destructive"
-                          size="sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        {q.options.map((opt, idx) => (
-                          <div key={idx} className={`p-2 rounded ${idx === q.correct_answer ? 'bg-green-100 border border-green-300' : 'bg-white border'}`}>
-                            {String.fromCharCode(65 + idx)}. {opt}
-                            {idx === q.correct_answer && <span className="ml-2 text-green-600 font-bold">✓ Correct</span>}
+                <div className="space-y-8">
+                  {/* Group questions by standard/skill */}
+                  {Array.from(new Set(questions.map(q => q.skill))).map((skill) => {
+                    const skillQuestions = questions.filter(q => q.skill === skill);
+                    return (
+                      <div key={skill} className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg text-indigo-700">Standard: {skill}</h3>
+                            <p className="text-sm text-gray-600">{skillQuestions.length} questions</p>
                           </div>
-                        ))}
+                          <Button
+                            onClick={() => generateMoreQuestions(skill)}
+                            disabled={loading}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {loading ? 'Generating...' : 'Generate 5 More'}
+                          </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {skillQuestions.map((q, index) => (
+                            <div key={q.id} className="border rounded-lg p-4 bg-white">
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <div className="font-medium mb-2">Q{questions.indexOf(q) + 1}. {q.question_text}</div>
+                                </div>
+                                <Button
+                                  onClick={() => deleteQuestion(q.id)}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                              <div className="space-y-2">
+                                {q.options.map((opt, idx) => (
+                                  <div key={idx} className={`p-2 rounded text-sm ${idx === q.correct_answer ? 'bg-green-100 border border-green-300' : 'bg-gray-50 border'}`}>
+                                    {String.fromCharCode(65 + idx)}. {opt}
+                                    {idx === q.correct_answer && <span className="ml-2 text-green-600 font-bold">✓ Correct</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="flex gap-2 mt-6">
