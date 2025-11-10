@@ -79,6 +79,7 @@ class User(BaseModel):
     email: EmailStr
     full_name: str
     state: Optional[str] = None
+    school: Optional[str] = None
     role: str = "teacher"  # teacher or admin
     is_active: bool = True
     join_code: Optional[str] = None
