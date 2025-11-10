@@ -102,11 +102,10 @@ const CreateQuiz = ({ user }) => {
   };
 
   const generateQuestions = async () => {
-    const selectedObjectives = objectives.filter(obj => obj.selected).map(obj => obj.text);
     const selectedStandards = standards.filter(std => std.selected).map(std => std.text);
     
-    if (selectedObjectives.length === 0) {
-      toast.error('Please select at least one objective');
+    if (selectedStandards.length === 0) {
+      toast.error('Please select at least one standard');
       return;
     }
 
@@ -122,7 +121,6 @@ const CreateQuiz = ({ user }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-          objectives: selectedObjectives, 
           standards: selectedStandards,
           count: 3 
         })
