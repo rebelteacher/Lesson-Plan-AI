@@ -244,23 +244,56 @@ const QuizAnalytics = ({ user }) => {
                             <div className="mt-3 p-3 bg-white rounded border">
                               <div className="flex justify-between items-center mb-3">
                                 <div className="font-medium">Remediation Activities:</div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => {
-                                    const selectedForSkill = selectedActivities[skill.skill] || {};
-                                    const hasSelected = Object.values(selectedForSkill).some(v => v);
-                                    if (!hasSelected) {
-                                      toast.error('Please select at least one activity to print');
-                                      return;
-                                    }
-                                    window.print();
-                                  }}
-                                  className="print:hidden"
-                                >
-                                  <Printer className="w-4 h-4 mr-2" />
-                                  Print Selected
-                                </Button>
+                                <div className="flex gap-2 print:hidden">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      // Parse all activity numbers
+                                      const activities = {};
+                                      remediationSuggestions[skill.skill].split(/\n/).forEach(line => {
+                                        const match = line.match(/^(\d+)[\.\)]\s*(.+)/);
+                                        if (match) {
+                                          activities[match[1]] = true;
+                                        }
+                                      });
+                                      setSelectedActivities(prev => ({
+                                        ...prev,
+                                        [skill.skill]: activities
+                                      }));
+                                    }}
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedActivities(prev => ({
+                                        ...prev,
+                                        [skill.skill]: {}
+                                      }));
+                                    }}
+                                  >
+                                    Clear
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      const selectedForSkill = selectedActivities[skill.skill] || {};
+                                      const hasSelected = Object.values(selectedForSkill).some(v => v);
+                                      if (!hasSelected) {
+                                        toast.error('Please select at least one activity to print');
+                                        return;
+                                      }
+                                      window.print();
+                                    }}
+                                  >
+                                    <Printer className="w-4 h-4 mr-2" />
+                                    Print Selected
+                                  </Button>
+                                </div>
                               </div>
                               <div className="space-y-2">
                                 {remediationSuggestions[skill.skill].split(/\n/).filter(line => line.trim()).map((line, idx) => {
