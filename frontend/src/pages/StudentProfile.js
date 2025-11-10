@@ -170,6 +170,45 @@ const StudentProfile = ({ user }) => {
           </Card>
         </div>
 
+        {/* Progress Over Time Chart */}
+        {profile.test_history && profile.test_history.length > 1 && (
+          <Card className="mb-6 print:hidden">
+            <CardHeader>
+              <CardTitle>Progress Over Time</CardTitle>
+              <CardDescription>Score trends across quizzes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={profile.test_history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    domain={[0, 100]}
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Score (%)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="#6366f1" 
+                    strokeWidth={3}
+                    dot={{ fill: '#6366f1', r: 5 }}
+                    name="Score"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Standards Mastery */}
         <Card className="mb-6">
           <CardHeader>
