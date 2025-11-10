@@ -11,7 +11,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AuthPage = ({ onLogin }) => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ email: '', password: '', full_name: '', state: '', invitation_code: '' });
+  const [registerData, setRegisterData] = useState({ email: '', password: '', full_name: '', state: '', school: '', invitation_code: '' });
   const [loading, setLoading] = useState(false);
 
   // Auto-fill invitation code from URL
