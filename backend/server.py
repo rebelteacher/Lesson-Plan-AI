@@ -761,17 +761,30 @@ async def extract_objectives(data: dict, current_user: dict = Depends(get_curren
     unique_standards = set()
     for standards_text in all_standards_text:
         # Skip placeholder text
-        if 'see full plan below' in standards_text.lower():
+        if 'see full plan below' in standards_text.lower() or 'content will be generated' in standards_text.lower():
             continue
+        
+        # Split by lines to process each standard separately
+        lines = standards_text.split('\n')
+        for line in lines:
+            # Look for standard codes at the beginning of lines (before colons or descriptions)
+            # Matches: 7.G.1, MS.SS.7.3, CCSS.ELA-LITERACY.RI.RH.6-8.2, etc.
             
-        # Look for patterns like: MS.SS.7.3, 7.2.3, CCSS.ELA-LITERACY.RI.8.2, etc.
-        # More specific pattern: starts with letters or numbers, has dots/dashes, ends with numbers/letters
-        standard_pattern = r'\b(?:[A-Z]+\.(?:[A-Z]+\.)?[0-9]+(?:\.[0-9]+)*(?:\.[A-Z]+)?|[0-9]+\.[0-9]+(?:\.[0-9A-Z]+)*)\b'
-        matches = re.findall(standard_pattern, standards_text, re.IGNORECASE)
-        for match in matches:
-            # Filter out false positives (must contain at least one digit)
-            if re.search(r'\d', match):
-                unique_standards.add(match.strip())
+            # Pattern 1: Standard code before a colon (e.g., "7.G.1: Description")
+            colon_pattern = r'^[\s\-\*\•]*([A-Z0-9][A-Z0-9\.\-]+[0-9A-Z])(?:\s*[:)]|$)'
+            match = re.match(colon_pattern, line.strip(), re.IGNORECASE)
+            if match:
+                code = match.group(1).strip()
+                if re.search(r'\d', code) and '.' in code:  # Must have digit and dot
+                    unique_standards.add(code)
+                continue
+            
+            # Pattern 2: Standard codes in brackets or bold (e.g., "**7.G.2**")
+            bracket_pattern = r'[\[\*]+([A-Z0-9][A-Z0-9\.\-]+[0-9A-Z])[\]\*]+'
+            matches = re.findall(bracket_pattern, line, re.IGNORECASE)
+            for code in matches:
+                if re.search(r'\d', code) and '.' in code:
+                    unique_standards.add(code.strip())
     
     # Create standards list
     standards_list = [
