@@ -798,7 +798,7 @@ Return ONLY a JSON array in this exact format:
     "question_text": "question here",
     "options": ["option 1", "option 2", "option 3", "option 4"],
     "correct_answer": 0,
-    "skill": "{obj}"
+    "skill": "{obj_text}"
   }}
 ]
 
@@ -823,7 +823,7 @@ Return ONLY the JSON array, no other text."""
                         'question_text': q['question_text'],
                         'options': q['options'],
                         'correct_answer': q['correct_answer'],
-                        'skill': obj
+                        'skill': obj_text
                     })
         except Exception as e:
             logging.error(f"Error parsing questions: {str(e)}")
