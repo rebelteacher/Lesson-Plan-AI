@@ -604,10 +604,17 @@ async def submit_lesson_plan(plan_id: str, current_user: dict = Depends(get_curr
 @api_router.get("/admin/lesson-plans/pending")
 async def get_pending_submissions(admin_user: dict = Depends(get_admin_user)):
     """Admin views all pending lesson plan submissions"""
-    pending_plans = await db.lesson_plans.find(
-        {"submission_status": "pending"},
-        {"_id": 0}
-    ).sort("submitted_at", -1).to_list(1000)
+    
+    # Get admin's supervised teachers
+    admin = await db.users.find_one({"id": admin_user['id']}, {"_id": 0})
+    supervised_ids = admin.get('supervised_teacher_ids', [])
+    
+    # Filter by supervised teachers if set
+    query = {"submission_status": "pending"}
+    if supervised_ids:
+        query["user_id"] = {"$in": supervised_ids}
+    
+    pending_plans = await db.lesson_plans.find(query, {"_id": 0}).sort("submitted_at", -1).to_list(1000)
     
     # Get teacher info for each plan
     for plan in pending_plans:
