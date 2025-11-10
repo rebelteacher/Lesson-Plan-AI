@@ -161,6 +161,35 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </Card>
         </div>
 
+        {/* Additional Tools */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/standards-coverage')}>
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CheckCircle className="w-6 h-6" />
+                Standards Coverage
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">Track Assessment Coverage</div>
+              <div className="text-blue-100">See which standards you've tested</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/at-risk-students')}>
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6" />
+                At-Risk Students
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">Intervention & Tutoring</div>
+              <div className="text-red-100">Priority students who need help</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: '#4c1d95' }}>Your Lesson Plans</h2>
           <Button 
