@@ -1642,8 +1642,15 @@ async def get_lesson_plan_reports(admin_user: dict = Depends(get_admin_user)):
 async def get_test_results_reports(admin_user: dict = Depends(get_admin_user)):
     """Get comprehensive test results with school/class/student drill-down"""
     
-    # Get all classes with teacher info
-    classes = await db.classes.find({}, {"_id": 0}).to_list(1000)
+    # Get admin's supervised teachers
+    admin = await db.users.find_one({"id": admin_user['id']}, {"_id": 0})
+    supervised_ids = admin.get('supervised_teacher_ids', [])
+    
+    # Filter classes by supervised teachers if set
+    if supervised_ids:
+        classes = await db.classes.find({"teacher_id": {"$in": supervised_ids}}, {"_id": 0}).to_list(1000)
+    else:
+        classes = await db.classes.find({}, {"_id": 0}).to_list(1000)
     
     # Get all teachers
     teachers = await db.users.find({"role": "teacher"}, {"_id": 0}).to_list(1000)
