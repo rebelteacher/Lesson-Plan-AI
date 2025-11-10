@@ -84,6 +84,7 @@ class User(BaseModel):
     role: str = "teacher"  # teacher or admin
     is_active: bool = True
     join_code: Optional[str] = None
+    supervised_teacher_ids: List[str] = []  # For admins: teachers they supervise
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
