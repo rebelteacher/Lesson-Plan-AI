@@ -197,6 +197,17 @@ const AuthPage = ({ onLogin }) => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="register-school">School (Optional)</Label>
+                    <Input
+                      id="register-school"
+                      data-testid="register-school-input"
+                      type="text"
+                      placeholder="Lincoln Elementary"
+                      value={registerData.school}
+                      onChange={(e) => setRegisterData({ ...registerData, school: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="register-password">Password</Label>
                     <Input
                       id="register-password"
