@@ -1155,6 +1155,235 @@ Format: Return exactly 5 activities as a clear numbered list (1-5). Each activit
     
     return {"skill": skill, "suggestions": response_text}
 
+# Individual Test Report
+@api_router.get("/analytics/test/{quiz_id}")
+async def get_test_report(quiz_id: str, current_user: dict = Depends(get_current_user)):
+    # Get quiz
+    quiz = await db.quizzes.find_one({"id": quiz_id}, {"_id": 0})
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    
+    # Get all submissions for this quiz
+    submissions = await db.submissions.find({"test_id": quiz_id}, {"_id": 0}).to_list(10000)
+    
+    if not submissions:
+        return {"message": "No submissions yet"}
+    
+    # Get student info
+    student_ids = [sub['student_id'] for sub in submissions]
+    students = await db.students.find({"id": {"$in": student_ids}}, {"_id": 0}).to_list(1000)
+    student_map = {s['id']: s for s in students}
+    
+    # Calculate overall stats
+    scores = [sub['score'] for sub in submissions]
+    class_average = sum(scores) / len(scores) if scores else 0
+    highest_score = max(scores) if scores else 0
+    lowest_score = min(scores) if scores else 0
+    
+    # Calculate standards performance
+    standards_stats = {}
+    for sub in submissions:
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            if standard not in standards_stats:
+                standards_stats[standard] = {
+                    'standard': standard,
+                    'total_correct': 0,
+                    'total_attempts': 0,
+                    'students_struggling': []
+                }
+            
+            standards_stats[standard]['total_correct'] += breakdown['correct']
+            standards_stats[standard]['total_attempts'] += breakdown['total']
+            
+            percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+            if percentage < 70:
+                student_name = student_map.get(sub['student_id'], {}).get('name', 'Unknown')
+                standards_stats[standard]['students_struggling'].append(student_name)
+    
+    # Calculate standards averages
+    standards_list = []
+    for std_code, stats in standards_stats.items():
+        class_avg = (stats['total_correct'] / stats['total_attempts'] * 100) if stats['total_attempts'] > 0 else 0
+        standards_list.append({
+            'standard': std_code,
+            'class_average': class_avg,
+            'students_struggling': len(set(stats['students_struggling']))
+        })
+    
+    # Student results
+    student_results = []
+    for sub in submissions:
+        student_name = student_map.get(sub['student_id'], {}).get('name', 'Unknown')
+        
+        standards_performance = []
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+            standards_performance.append({
+                'standard': standard,
+                'percentage': percentage
+            })
+        
+        student_results.append({
+            'student_id': sub['student_id'],
+            'name': student_name,
+            'score': sub['score'],
+            'standards_performance': standards_performance
+        })
+    
+    # Sort by score descending
+    student_results.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Question analysis
+    question_stats = {}
+    for question in quiz['questions']:
+        question_stats[question['id']] = {
+            'question_text': question['question_text'],
+            'standard': question['skill'],
+            'correct_count': 0,
+            'total_count': 0
+        }
+    
+    for sub in submissions:
+        for answer in sub['answers']:
+            if answer['question_id'] in question_stats:
+                question_stats[answer['question_id']]['total_count'] += 1
+                
+                # Check if answer is correct
+                question = next((q for q in quiz['questions'] if q['id'] == answer['question_id']), None)
+                if question and question['correct_answer'] == answer['selected_answer']:
+                    question_stats[answer['question_id']]['correct_count'] += 1
+    
+    questions_analysis = []
+    for q_id, stats in question_stats.items():
+        percent_correct = (stats['correct_count'] / stats['total_count'] * 100) if stats['total_count'] > 0 else 0
+        questions_analysis.append({
+            'question_text': stats['question_text'],
+            'standard': stats['standard'],
+            'percent_correct': percent_correct
+        })
+    
+    return {
+        'quiz_title': quiz['title'],
+        'total_students': len(submissions),
+        'class_average': class_average,
+        'highest_score': highest_score,
+        'lowest_score': lowest_score,
+        'standards': standards_list,
+        'students': student_results,
+        'questions': questions_analysis
+    }
+
+# Individual Student Profile
+@api_router.get("/analytics/student/{student_id}")
+async def get_student_profile(student_id: str, current_user: dict = Depends(get_current_user)):
+    # Get student info
+    student = await db.students.find_one({"id": student_id}, {"_id": 0})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Get all submissions for this student
+    submissions = await db.submissions.find({"student_id": student_id}, {"_id": 0}).sort("submitted_at", 1).to_list(10000)
+    
+    if not submissions:
+        return {
+            'student_name': student['name'],
+            'tests_taken': 0,
+            'overall_average': 0,
+            'highest_score': 0,
+            'standards_mastered': 0,
+            'standards': [],
+            'test_history': [],
+            'needs_support': []
+        }
+    
+    # Calculate overall stats
+    scores = [sub['score'] for sub in submissions]
+    overall_average = sum(scores) / len(scores) if scores else 0
+    highest_score = max(scores) if scores else 0
+    
+    # Calculate standards performance
+    standards_data = {}
+    for sub in submissions:
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            if standard not in standards_data:
+                standards_data[standard] = {
+                    'standard': standard,
+                    'total_correct': 0,
+                    'total_attempts': 0,
+                    'scores': []
+                }
+            
+            percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+            standards_data[standard]['scores'].append(percentage)
+            standards_data[standard]['total_correct'] += breakdown['correct']
+            standards_data[standard]['total_attempts'] += breakdown['total']
+    
+    # Calculate standards averages and mastery
+    standards_list = []
+    standards_mastered = 0
+    needs_support = []
+    
+    for std_code, data in standards_data.items():
+        average = (data['total_correct'] / data['total_attempts'] * 100) if data['total_attempts'] > 0 else 0
+        
+        if average >= 80:
+            standards_mastered += 1
+        elif average < 70:
+            needs_support.append(std_code)
+        
+        standards_list.append({
+            'standard': std_code,
+            'average': average,
+            'attempts': len(data['scores'])
+        })
+    
+    # Sort standards by average descending
+    standards_list.sort(key=lambda x: x['average'], reverse=True)
+    
+    # Test history with trends
+    test_history = []
+    for idx, sub in enumerate(submissions):
+        # Get quiz info
+        quiz = await db.quizzes.find_one({"id": sub['test_id']}, {"_id": 0})
+        
+        # Determine trend
+        trend = 'stable'
+        if idx > 0:
+            prev_score = submissions[idx - 1]['score']
+            if sub['score'] > prev_score + 5:
+                trend = 'up'
+            elif sub['score'] < prev_score - 5:
+                trend = 'down'
+        
+        # Standards performance for this test
+        standards_performance = []
+        for standard, breakdown in sub.get('skills_breakdown', {}).items():
+            percentage = (breakdown['correct'] / breakdown['total'] * 100) if breakdown['total'] > 0 else 0
+            standards_performance.append({
+                'standard': standard,
+                'percentage': percentage
+            })
+        
+        test_history.append({
+            'quiz_id': sub['test_id'],
+            'quiz_title': quiz['title'] if quiz else 'Unknown Quiz',
+            'score': sub['score'],
+            'date': sub['submitted_at'][:10] if isinstance(sub['submitted_at'], str) else str(sub['submitted_at'])[:10],
+            'trend': trend,
+            'standards_performance': standards_performance
+        })
+    
+    return {
+        'student_name': student['name'],
+        'tests_taken': len(submissions),
+        'overall_average': overall_average,
+        'highest_score': highest_score,
+        'standards_mastered': standards_mastered,
+        'standards': standards_list,
+        'test_history': test_history,
+        'needs_support': needs_support
+    }
+
 # Admin routes - Invitation Codes
 @api_router.post("/admin/invitation-codes")
 async def create_invitation_codes(data: CreateInvitationCode, admin_user: dict = Depends(get_admin_user)):
