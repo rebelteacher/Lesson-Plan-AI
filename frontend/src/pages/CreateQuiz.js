@@ -122,7 +122,7 @@ const CreateQuiz = ({ user }) => {
         },
         body: JSON.stringify({ 
           standards: selectedStandards,
-          count: 3 
+          count: 5 
         })
       });
       
