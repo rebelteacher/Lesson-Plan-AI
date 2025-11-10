@@ -56,6 +56,36 @@ const StudentProfile = ({ user }) => {
     return <Minus className="w-5 h-5 text-gray-600" />;
   };
 
+  const exportStudentData = () => {
+    if (!profile) return;
+
+    let csv = 'Student Profile Report\n';
+    csv += `Student: ${profile.student_name}\n`;
+    csv += `Tests Taken: ${profile.tests_taken}\n`;
+    csv += `Overall Average: ${profile.overall_average.toFixed(1)}%\n`;
+    csv += `Standards Mastered: ${profile.standards_mastered}\n\n`;
+    
+    csv += 'Standards Performance\n';
+    csv += 'Standard,Average,Status,Attempts\n';
+    profile.standards.forEach(std => {
+      csv += `${std.standard},${std.average.toFixed(1)}%,${getMasteryLabel(std.average)},${std.attempts}\n`;
+    });
+    
+    csv += '\nTest History\n';
+    csv += 'Date,Quiz Title,Score\n';
+    profile.test_history.forEach(test => {
+      csv += `${test.date},${test.quiz_title},${test.score.toFixed(1)}%\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${profile.student_name}_profile.csv`;
+    a.click();
+    toast.success('Profile exported!');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%)' }}>
