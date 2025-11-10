@@ -197,8 +197,9 @@ const QuizAnalytics = ({ user }) => {
                             size="sm"
                             className="mt-3"
                             variant="outline"
+                            disabled={loadingRemediation[skill.skill]}
                           >
-                            Get Remediation Suggestions
+                            {loadingRemediation[skill.skill] ? 'Loading...' : 'Get Remediation Suggestions'}
                           </Button>
 
                           {/* Show suggestions if loaded */}
