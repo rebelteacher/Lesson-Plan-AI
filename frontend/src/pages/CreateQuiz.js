@@ -78,6 +78,7 @@ const CreateQuiz = ({ user }) => {
       if (response.ok) {
         const data = await response.json();
         setObjectives(data.objectives);
+        setStandards(data.standards || []);
       } else {
         toast.error('Failed to extract objectives');
       }
