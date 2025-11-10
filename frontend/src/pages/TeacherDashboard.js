@@ -201,7 +201,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
               return (
                 <Card key={plan.id} className={`hover:shadow-2xl transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${colorClass} border-2`} data-testid={`lesson-plan-card-${plan.id}`}>
                   <CardHeader>
-                    <CardTitle className="text-lg line-clamp-1 text-gray-800">{plan.textbook}</CardTitle>
+                    <div className="flex justify-between items-start mb-2">
+                      <CardTitle className="text-lg line-clamp-1 text-gray-800">{plan.textbook}</CardTitle>
+                      {getStatusBadge(plan.submission_status)}
+                    </div>
                     <CardDescription className="font-medium text-gray-700">Lessons: {plan.lesson_range}</CardDescription>
                   </CardHeader>
                   <CardContent>
