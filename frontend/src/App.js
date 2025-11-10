@@ -16,6 +16,8 @@ import QuizAnalytics from '@/pages/QuizAnalytics';
 import TestReport from '@/pages/TestReport';
 import StudentProfile from '@/pages/StudentProfile';
 import GroupingView from '@/pages/GroupingView';
+import StandardsCoverage from '@/pages/StandardsCoverage';
+import AtRiskStudents from '@/pages/AtRiskStudents';
 import StudentJoin from '@/pages/StudentJoin';
 import StudentAssignments from '@/pages/StudentAssignments';
 import TakeQuiz from '@/pages/TakeQuiz';
