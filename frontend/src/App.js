@@ -107,6 +107,14 @@ function App() {
               element={user && user.role === 'admin' ? <AdminSettings user={user} /> : <Navigate to="/" />} 
             />
             <Route 
+              path="/admin/review-queue" 
+              element={user && user.role === 'admin' ? <AdminReviewQueue user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/lesson-plan/:id" 
+              element={user ? <ViewLessonPlan user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
               path="/classes" 
               element={user && user.role === 'teacher' ? <ClassManagement user={user} /> : <Navigate to="/" />} 
             />
