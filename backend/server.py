@@ -977,12 +977,30 @@ async def submit_quiz(data: dict):
     test_id = data['test_id']
     student_id = data['student_id']
     answers = [StudentAnswer(**a) for a in data['answers']]
-    class_id = data['class_id']
     
     # Get quiz
     quiz = await db.quizzes.find_one({"id": test_id}, {"_id": 0})
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
+    
+    # Find the class_id(s) this quiz is assigned to and that this student is in
+    assignments = await db.assignments.find({"test_id": test_id}, {"_id": 0}).to_list(1000)
+    student_classes = await db.classes.find({"student_ids": student_id}, {"_id": 0, "id": 1}).to_list(1000)
+    student_class_ids = [c['id'] for c in student_classes]
+    
+    # Find matching class
+    class_id = None
+    for assignment in assignments:
+        for assigned_class_id in assignment.get('class_ids', []):
+            if assigned_class_id in student_class_ids:
+                class_id = assigned_class_id
+                break
+        if class_id:
+            break
+    
+    if not class_id:
+        # Fallback: use first class the student is in
+        class_id = student_class_ids[0] if student_class_ids else 'unknown'
     
     # Calculate score and skills breakdown
     correct = 0
