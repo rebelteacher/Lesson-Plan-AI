@@ -94,7 +94,10 @@ const CreateQuiz = ({ user }) => {
   };
 
   const generateQuestions = async () => {
-    const selectedObjectives = objectives.filter(obj => obj.selected).map(obj => obj.text);
+    const selectedObjectives = objectives.filter(obj => obj.selected).map(obj => ({
+      text: obj.text,
+      standards: obj.standards
+    }));
     
     if (selectedObjectives.length === 0) {
       toast.error('Please select at least one objective');
@@ -102,7 +105,7 @@ const CreateQuiz = ({ user }) => {
     }
 
     setLoading(true);
-    toast.info('Generating questions... This may take a minute.');
+    toast.info('Generating questions aligned with standards... This may take a minute.');
     
     try {
       const token = localStorage.getItem('token');
