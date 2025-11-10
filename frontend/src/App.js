@@ -119,6 +119,10 @@ function App() {
               element={user && user.role === 'admin' ? <AdminReports user={user} /> : <Navigate to="/" />} 
             />
             <Route 
+              path="/admin/manage-teachers" 
+              element={user && user.role === 'admin' ? <ManageTeachers user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
               path="/lesson-plan/:id" 
               element={user ? <ViewLessonPlan user={user} /> : <Navigate to="/" />} 
             />
