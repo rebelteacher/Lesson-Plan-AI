@@ -874,7 +874,7 @@ Return ONLY the JSON array, no other text."""
                         'question_text': q['question_text'],
                         'options': q['options'],
                         'correct_answer': q['correct_answer'],
-                        'skill': obj_text
+                        'skill': standard_code
                     })
         except Exception as e:
             logging.error(f"Error parsing questions: {str(e)}")
