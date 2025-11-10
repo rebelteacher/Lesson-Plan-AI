@@ -62,6 +62,7 @@ const QuizAnalytics = ({ user }) => {
   };
 
   const loadRemediationSuggestions = async (skill, studentNames) => {
+    setLoadingRemediation({ ...loadingRemediation, [skill]: true });
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${BACKEND_URL}/api/analytics/remediation-suggestions`, {
@@ -79,9 +80,15 @@ const QuizAnalytics = ({ user }) => {
           ...remediationSuggestions,
           [skill]: data.suggestions
         });
+        toast.success('Remediation suggestions loaded!');
+      } else {
+        toast.error('Failed to load suggestions');
       }
     } catch (error) {
+      console.error('Remediation error:', error);
       toast.error('Error loading suggestions');
+    } finally {
+      setLoadingRemediation({ ...loadingRemediation, [skill]: false });
     }
   };
 
