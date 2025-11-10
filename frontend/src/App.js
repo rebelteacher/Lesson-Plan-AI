@@ -113,8 +113,16 @@ function App() {
               element={user && user.role === 'teacher' ? <CreateQuiz user={user} /> : <Navigate to="/" />} 
             />
             <Route 
-              path="/quiz/analytics" 
+              path="/analytics" 
               element={user && user.role === 'teacher' ? <QuizAnalytics user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/test-report/:quizId" 
+              element={user && user.role === 'teacher' ? <TestReport user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/student-profile/:studentId" 
+              element={user && user.role === 'teacher' ? <StudentProfile user={user} /> : <Navigate to="/" />} 
             />
             <Route 
               path="/student/join" 
