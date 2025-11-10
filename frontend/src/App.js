@@ -126,6 +126,10 @@ function App() {
               element={user && user.role === 'teacher' ? <StudentProfile user={user} /> : <Navigate to="/" />} 
             />
             <Route 
+              path="/groupings/:classId" 
+              element={user && user.role === 'teacher' ? <GroupingView user={user} /> : <Navigate to="/" />} 
+            />
+            <Route 
               path="/student/join" 
               element={<StudentJoin />} 
             />
