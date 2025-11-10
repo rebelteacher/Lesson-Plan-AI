@@ -106,7 +106,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/quiz/analytics')}>
+          <Card className="bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/analytics')}>
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
