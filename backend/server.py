@@ -1133,20 +1133,21 @@ async def get_remediation_suggestions(data: dict, current_user: dict = Depends(g
     )
     chat.with_model("anthropic", "claude-3-7-sonnet-20250219")
     
-    prompt = f"""Provide exactly 5 specific, actionable remediation activities for students struggling with the following skill:
+    prompt = f"""Provide exactly 5 specific, actionable remediation activities for students struggling with the following standard/skill:
 
-"{skill}"
+Standard/Skill: {skill}
 
-Students needing help: {', '.join(student_names)}
+Students needing help: {', '.join(student_names) if student_names else 'Multiple students'}
 
-For each activity:
-1. Be specific and immediately actionable
-2. Include materials needed
-3. Suggest duration (5-15 minutes)
-4. Make it engaging and varied
-5. Build from concrete to abstract
+Requirements for EACH of the 5 activities:
+- Be specific and immediately actionable in the classroom
+- Include materials needed (common classroom items)
+- Suggest duration (5-15 minutes)
+- Make it engaging and age-appropriate
+- Build from concrete to abstract understanding
+- Focus on the specific standard/skill listed above
 
-Format as a numbered list (1-5)."""
+Format: Return exactly 5 activities as a clear numbered list (1-5). Each activity should be 2-3 sentences."""
 
     user_message = UserMessage(text=prompt)
     response = await chat.send_message(user_message)
