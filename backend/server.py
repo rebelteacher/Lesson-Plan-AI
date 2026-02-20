@@ -67,13 +67,7 @@ async def shutdown_db_client():
     client.close()
 
 
-# Health check endpoints (both root and /api for compatibility)
-@app.get("/health")
-async def health_check_root():
-    """Root health check endpoint for Kubernetes"""
-    return {"status": "healthy", "version": "2.0.0"}
-
-
+# Health check endpoint
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
