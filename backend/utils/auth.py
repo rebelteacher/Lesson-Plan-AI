@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timezone, timedelta
 import jwt
+from jwt.exceptions import ExpiredSignatureError, DecodeError
 import os
 
 from .database import db
