@@ -42,6 +42,11 @@ security = HTTPBearer()
 # Create the main app without a prefix
 app = FastAPI()
 
+# Health check endpoint for Kubernetes deployment
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
